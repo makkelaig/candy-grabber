@@ -2,8 +2,7 @@ import time
 import atexit
 import RPi.GPIO as GPIO
 from axis import MockSwitch, RealSwitch, Motor, Axis
-#from controller import Controller
-from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+#from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 from stateMachine import CandyGrabber
 import time
 import os
@@ -25,23 +24,23 @@ except ImportError:
 ##    _states = ("Stopped","Idle","Execute","Won", "Lost")
 ##    _commands = ()
 
-#create a default object, no changes to I2C address or frequency
-mh = Adafruit_MotorHAT(addr=0x60)
-#create motors
-m1 = mh.getMotor(1)
-m2 = mh.getMotor(2)
-m3 = mh.getMotor(3)
-# set the speed to start, from 0 (off) to 255 (max speed)
-m1.setSpeed(80)
-m2.setSpeed(80)
-m3.setSpeed(80)
-# recommended for auto-disabling motors on shutdown!
-def turnOffMotors():
-    mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
-    mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
-    mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
-
-atexit.register(turnOffMotors)
+###create a default object, no changes to I2C address or frequency
+##mh = Adafruit_MotorHAT(addr=0x60)
+###create motors
+##m1 = mh.getMotor(1)
+##m2 = mh.getMotor(2)
+##m3 = mh.getMotor(3)
+### set the speed to start, from 0 (off) to 255 (max speed)
+##m1.setSpeed(80)
+##m2.setSpeed(80)
+##m3.setSpeed(80)
+### recommended for auto-disabling motors on shutdown!
+##def turnOffMotors():
+##    mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
+##    mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
+##    mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
+##
+##atexit.register(turnOffMotors)
 
 GPIO.setmode(GPIO.BCM)
 #Controller pins
@@ -73,7 +72,9 @@ RPi_pins = {"left":24,
             "gotCandy":27,
             "coinInserted":16
             }
-
+m1="mLR"
+m2="mBF"
+m3="mDU"
 Motor1 = Motor(m1)
 Motor2 = Motor(m2)
 Motor3 = Motor(m3)
@@ -160,7 +161,7 @@ def move_DU(channel):
                 
                 if GPIO.input(RPi_pins["down"]):
                     CG.AxisDU.move("down")
-                
+                CG
                 else:
                     CG.AxisDU.move("up")
 
@@ -169,13 +170,18 @@ def move_DU(channel):
                 if GPIO.input(RPi_pins["down"]) and GPIO.input(RPi_pins["up"]):
                     raise ValueError("Invalid Controller Value!")
 
-
+def end_LR(channel):
+    print('Left:', GPIO.input(RPi_pins["endLeft"]))
+    print('Right:', GPIO.input(RPi_pins["endRight"]))
+    
 GPIO.add_event_detect(RPi_pins["back"], GPIO.BOTH, callback= move_BF)
 GPIO.add_event_detect(RPi_pins["front"], GPIO.BOTH, callback= move_BF)
 GPIO.add_event_detect(RPi_pins["left"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["right"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["down"], GPIO.BOTH, callback= move_DU)
-GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)  
+GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
+GPIO.add_event_detect(RPi_pins["endLeft"], GPIO.BOTH, callback = end_LR)
+GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
 
 while 1:
     
@@ -188,9 +194,9 @@ while 1:
         
     finally:
         GPIO.cleanup()         # clean up after yourself
-        mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
-        mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
-        mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
+##        mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
+##        mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
+##        mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
     
 
 
