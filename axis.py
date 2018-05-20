@@ -55,20 +55,22 @@ class MockSwitch(Endswitch):
         self._counter = 0
     
     def get_end_cw(self):
-        if (self._counter >= 3):
-            self._end_cw = True
-        else:
-            self._end_cw = False
-        return self._end_cw
-    
+        return False
+#        if (self._counter >= 3):
+#            self._end_cw = True
+#        else:
+#            self._end_cw = False
+#        return self._end_cw
+
     def get_end_ccw(self):
-        if (self._counter <= 0):
-            self._end_ccw = True
-            self.reset_counter()
-        else:
-            self._end_ccw = False
-        return self._end_ccw
-    
+        return False
+#        if (self._counter <= 0):
+#            self._end_ccw = True
+#            self.reset_counter()
+#        else:
+#            self._end_ccw = False
+#        return self._end_ccw
+
     def increase_counter(self):
         self._counter += 1
     
@@ -115,28 +117,36 @@ class Axis:
         
         if direction == "none":
             self.motor.stop()
+            print(self.motor.Id, ':stop')
         
         elif self.directions[0] == direction:
             
-            if not self.endswitch.get_end_cw():
+            while not self.endswitch.get_end_cw():
                 self.motor.move_cw()
-                if (self.endswitch.__class__.__name__ == "MockSwitch"):
-                    self.endswitch.increase_counter()
-                    self.endswitch.print_counter()
-            
-            else:
-                print("End reached", direction)
-                if (self.endswitch.__class__.__name__ == "MockSwitch"):
-                    self.endswitch.decrease_counter()
-        
+                print(self.motor.Id,': moving ', direction)
+#                if (self.endswitch.__class__.__name__ == "MockSwitch"):
+#                    self.endswitch.increase_counter()
+#                    self.endswitch.print_counter()
+
+            if self.endswitch.get_end_cw():
+                print('End reached', direction)
+                print(self.motor.Id, ':stop')
+                self.motor.stop()
+#                if (self.endswitch.__class__.__name__ == "MockSwitch"):
+#                    self.endswitch.decrease_counter()
+#                    self.endswitch.print_counter()
+
         else:
-            if not self.endswitch.get_end_ccw():
+            while not self.endswitch.get_end_ccw():
                 self.motor.move_ccw()
-                if (self.endswitch.__class__.__name__ == "MockSwitch"):
-                    self.endswitch.decrease_counter()
-                    self.endswitch.print_counter()           
-            else:
-                print("End reached", direction)
+                print(self.motor.Id,': moving ', direction)
+#                if (self.endswitch.__class__.__name__ == "MockSwitch"):
+#                    self.endswitch.decrease_counter()
+#                    self.endswitch.print_counter()           
+            if self.endswitch.get_end_cw():
+                print('End reached', direction)
+                print(self.motor.Id, ':stop')
+                self.motor.stop()
 
 #usage example
 #m2 = "m2"

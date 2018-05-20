@@ -95,83 +95,80 @@ AxisDU = Axis(Motor3,("down","up"),EndDU)
 
 CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
 
-
-def move_BF(channel):     
-    print(channel)
-    if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins["front"])):
-        print("back/front")
-        if GPIO.input(RPi_pins["back"]):
-            if not GPIO.input(RPi_pins["endBack"]):
-                CG.AxisBF.move("back")
-            else:
-                print("End Reached back")
-                CG.AxisBF.move("none")
-        if GPIO.input(RPi_pins["front"]):   
-            if not GPIO.input(RPi_pins["endFront"]):
-                CG.AxisBF.move("front")
-            else:
-                print("End Reached front")
-                CG.AxisBF.move("none")
-    else:
-        if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
-            AxisBF.move("none")
-            time.sleep(3)
-            raise ValueError("Invalid Controller Value!")
-            
-        AxisBF.move("none")
-        time.sleep(0.1)
+def move_BF(channel):
     
-def move_LR(channel):
-    print(channel)
-    if (GPIO.input(RPi_pins["left"]))^(GPIO.input(RPi_pins["right"])):
-        print("left/right")
-        if GPIO.input(RPi_pins["left"]):
-            if not GPIO.input(RPi_pins["endLeft"]):
-                AxisLR.move("left")
-            else:
-                print("End Reached Left")
-                AxisLR.move("none")
-                #time.sleep(0.1)
-        if GPIO.input(RPi_pins["right"]):   
-            if not GPIO.input(RPi_pins["endRight"]):
-                AxisLR.move("right")
-            else:
-                print("End Reached Right")
-                AxisLR.move("none")
+    if CG.state != "Playing":
+        print('You have to start a game first')
     else:
-        if GPIO.input(RPi_pins["left"]) and GPIO.input(RPi_pins["right"]):
-            AxisLR.move("none")
-            time.sleep(3)
-            raise ValueError("Invalid Controller Value!")
+        print(channel)
+        if CG.get_mode() != "manual":
+            print('Somebody is playing remotely at the moment')
+
+        else:
+            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins["front"])):
+
+                if GPIO.input(RPi_pins["back"]):
+                    CG.AxisBF.move("back")
             
-        AxisLR.move("none")
-        time.sleep(0.1)
+                else:
+                    CG.AxisBF.move("front")
+            else:
+                CG.AxisBF.move("none")
+                if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
+                    raise ValueError('Invalid Controller Value!')
+
+
+def move_LR(channel):
+    
+    if CG.state != "Playing":
+        print('You have to start a game first')
+
+    else:
+        print(channel)
+        if CG.get_mode() != "manual":
+            print('Somebody is playing remotely at the moment')
+
+        else:
+            print(channel)
+            if (GPIO.input(RPi_pins["left"]))^(GPIO.input(RPi_pins["right"])):
+                
+                if GPIO.input(RPi_pins["left"]):
+                    CG.AxisLR.move("left")
+            
+                else:
+                    CG.AxisLR.move("right")
+
+            else:
+                CG.AxisLR.move("none")
+                if GPIO.input(RPi_pins["left"]) and GPIO.input(RPi_pins["right"]):
+                    raise ValueError('Invalid Controller Value!')
+
+
 
 def move_DU(channel):
-    print(channel)
-    if (GPIO.input(RPi_pins["down"]))^(GPIO.input(RPi_pins["up"])):
-        print("down/up")
-        if GPIO.input(RPi_pins["down"]):
-            #if not AxisDU.endSwitch.get_end_cw():
-                AxisDU.move("down")
-            #else:
-             #   print("End Reached bottom")
-              #  AxisDU.move("none")
-                #time.sleep(0.1)
-        if GPIO.input(RPi_pins["up"]):   
-            #if not AxisDU.endSwitch.get_end_ccw():
-                AxisDU.move("up")
-            #else:
-               # print("End Reached top")
-                #AxisDU.move("none")
+    if CG.state != "Playing":
+        print('You have to start a game first')
+
     else:
-        if GPIO.input(RPi_pins["down"]) and GPIO.input(RPi_pins["up"]):
-            AxisDU.move("none")
-            time.sleep(3)
-            raise ValueError("Invalid Controller Value!")
-            
-        AxisDU.move("none")
-        time.sleep(0.1)
+        print(channel)
+        if CG.get_mode() != "manual":
+            print('Somebody is playing remotely at the moment')
+
+        else:
+            print(channel)
+            if (GPIO.input(RPi_pins["down"]))^(GPIO.input(RPi_pins["up"])):
+                
+                if GPIO.input(RPi_pins["down"]):
+                    CG.AxisDU.move("down")
+                
+                else:
+                    CG.AxisDU.move("up")
+
+            else:
+                CG.AxisDU.move("none")
+                if GPIO.input(RPi_pins["down"]) and GPIO.input(RPi_pins["up"]):
+                    raise ValueError("Invalid Controller Value!")
+
 
 GPIO.add_event_detect(RPi_pins["back"], GPIO.BOTH, callback= move_BF)
 GPIO.add_event_detect(RPi_pins["front"], GPIO.BOTH, callback= move_BF)

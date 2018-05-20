@@ -36,6 +36,10 @@ class CandyGrabber:
             ret = False
                 
         return ret
+    
+    def get_mode(self):
+        print(self.mode)
+        return self.mode
 
     def game_ready(self):
         print('Ready, waiting for player')
@@ -48,6 +52,9 @@ class CandyGrabber:
     def stop_game(self):
         #turn off motors
         print('stopping')
+
+
+
 
 
 #CG = CandyGrabber()
