@@ -6,6 +6,8 @@ from transitions import Machine
 
 class CandyGrabber:
     
+    coin_inserted = False
+    
     states = ['Stopped', 'Idle', 'Playing', 'Complete']
     transitions = [
                    { 'trigger': 'reset', 'source': ['Complete','Stopped'], 'dest': 'Idle','before':'reset_game','after':'game_ready' },
@@ -14,11 +16,13 @@ class CandyGrabber:
                    { 'trigger': 'finish', 'source': 'Playing', 'dest': 'Complete' }
                    ]
 
-    def __init__(self):
+    def __init__(self, AxisBF, AxisLR, AxisDU):
         self.machine = Machine(model=self, states=CandyGrabber.states, transitions=CandyGrabber.transitions, initial='Stopped')
         #mode can be 'none', 'remote' or 'manual'
         self.mode = 'none'
-    
+        self.AxisBF = AxisBF
+        self.AxisLR = AxisLR
+        self.AxisDU = AxisDU
 
     def set_mode(self,mode_in):
         
@@ -46,5 +50,5 @@ class CandyGrabber:
         print('stopping')
 
 
-CG = CandyGrabber()
-CG.state
+#CG = CandyGrabber()
+#CG.state

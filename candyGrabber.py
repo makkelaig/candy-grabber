@@ -4,6 +4,7 @@ import RPi.GPIO as GPIO
 from axis import MockSwitch, RealSwitch, Motor, Axis
 #from controller import Controller
 from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+from stateMachine import CandyGrabber
 import time
 import os
 #import random
@@ -92,6 +93,8 @@ AxisBF = Axis(Motor2,("back","front"),EndBF)
 AxisLR = Axis(Motor1,("left","right"),EndLR)
 AxisDU = Axis(Motor3,("down","up"),EndDU)
 
+CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
+
 
 def move_BF(channel):     
     print(channel)
@@ -99,16 +102,16 @@ def move_BF(channel):
         print("back/front")
         if GPIO.input(RPi_pins["back"]):
             if not GPIO.input(RPi_pins["endBack"]):
-                AxisBF.move("back")
+                CG.AxisBF.move("back")
             else:
                 print("End Reached back")
-                AxisBF.move("none")
+                CG.AxisBF.move("none")
         if GPIO.input(RPi_pins["front"]):   
             if not GPIO.input(RPi_pins["endFront"]):
-                AxisBF.move("front")
+                CG.AxisBF.move("front")
             else:
                 print("End Reached front")
-                AxisBF.move("none")
+                CG.AxisBF.move("none")
     else:
         if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
             AxisBF.move("none")
