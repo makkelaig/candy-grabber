@@ -6,10 +6,11 @@
 ################################
 import time
 import atexit
-#import RPi.GPIO as GPIO
-#from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+import RPi.GPIO as GPIO
+from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 from abc import ABC, abstractmethod
 
+#GPIO.setmode(GPIO.BCM)
 
 
 #abstract base class endswitch
@@ -29,19 +30,18 @@ class Endswitch(ABC):
 #child class for real endswitch
 class RealSwitch(Endswitch):
     _end_cw = False
-    _end_cw = False
+    _end_ccw = False
     #takes endswitch pin numbers as arguments
     def __init__(self, pin_end_cw, pin_end_ccw):
         self.pinCW = pin_end_cw
         self.pinCCW = pin_end_ccw
     
     def get_end_cw(self):
-        self._end_cw = GPIO_input(self.pinCW)
-        #inverting the value since the switch is normally closed
+        self._end_cw = GPIO.input(self.pinCW)
         return self._end_cw
     
     def get_end_ccw(self):
-        self._end_ccw = GPIO_input(self.pinCCW)
+        self._end_ccw = GPIO.input(self.pinCCW)
         return self._end_ccw
 
 
@@ -89,17 +89,17 @@ class Motor:
     
     def move_cw(self):
         print("move cw motor",self.Id)
-        #self.Id.run(Adafruit_MotorHAT.FORWARD)
+        self.Id.run(Adafruit_MotorHAT.FORWARD)
         time.sleep(0.1)
     
     def move_ccw(self):
         print("move ccw motor ", self.Id)
-        #self.Id.run(Adafruit_MotorHAT.BACKWARD)
+        self.Id.run(Adafruit_MotorHAT.BACKWARD)
         time.sleep(0.1)
     
     def stop(self):
         print("stop motor " ,self.Id)
-        #self.Id.run(Adafruit_MotorHAT.RELEASE)
+        self.Id.run(Adafruit_MotorHAT.RELEASE)
         time.sleep(0.1)
 
 
@@ -113,15 +113,12 @@ class Axis:
     
     def move(self,direction):
         
-        if direction not in self.directions:
-            if direction == "none":
-                self.motor.stop()
-            else:
-                print("warning: wrong direction parameter ", self.motor.Id)
+        if direction == "none":
+            self.motor.stop()
         
-        if self.directions[0] == direction:
+        elif self.directions[0] == direction:
             
-            if self.endswitch.get_end_cw() == False:
+            if not self.endswitch.get_end_cw():
                 self.motor.move_cw()
                 if (self.endswitch.__class__.__name__ == "MockSwitch"):
                     self.endswitch.increase_counter()
@@ -129,16 +126,15 @@ class Axis:
             
             else:
                 print("End reached", direction)
-                self.endswitch.decrease_counter()
+                if (self.endswitch.__class__.__name__ == "MockSwitch"):
+                    self.endswitch.decrease_counter()
         
         else:
-            if self.endswitch.get_end_ccw() == False:
+            if not self.endswitch.get_end_ccw():
                 self.motor.move_ccw()
                 if (self.endswitch.__class__.__name__ == "MockSwitch"):
                     self.endswitch.decrease_counter()
-                    self.endswitch.print_counter()
-            
-            
+                    self.endswitch.print_counter()           
             else:
                 print("End reached", direction)
 
@@ -155,5 +151,6 @@ class Axis:
 #Axis2.move("up")
 #Axis2.move("none")
 #Axis2.move("down")
+
 
 
