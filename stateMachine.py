@@ -49,9 +49,12 @@ class CandyGrabber:
         self.mode = 'none'
 
 
-    def stop_game(self):
+    def stop_claw(self):
         #turn off motors
-        print('stopping')
+        self.AxisLR.move("none")
+        self.AxisBF.move("none")
+        self.AxisDU.move("none")
+        print('stopping motors')
 
 
 
