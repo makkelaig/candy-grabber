@@ -110,11 +110,11 @@ def move_claw(direction):
             if direction == "none":
                 CG.stop_claw()
             elif direction in ["left","right"]:
-                CG.AxisLR.move(val)
+                CG.AxisLR.move(direction)
             elif direction in ["down","up"]:
-                CG.AxisDU.move(val)
+                CG.AxisDU.move(direction)
             else:
-                CG.AxisBF.move(val)
+                CG.AxisBF.move(direction)
             return ret
         
         
@@ -148,19 +148,22 @@ class SubHandler_start(object):
     
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
-        
-        if CG.state == "Stopped":
-            CG.reset()          
-            ret = CG.start('remote')
+        ret = False
+        if val==True:
+            if CG.state == "Stopped":
+                CG.reset()          
+                ret = CG.start('remote')
+            else:
+                ret = CG.start('remote')
+                
         else:
-            ret = CG.start('remote')
+            ret = CG.stop()
+            CG.reset()
+            state.set_value(CG.state)
+            mode.set_value(CG.mode)
+            print("stopping game:", state.get_value(), mode.get_value())
         return ret
 
-class SubHandler_stop(object):
-    
-    def datachange_notification(self, node, val, data):
-        print("Python: New data change event", node, val)
-        return CG.stop()
 # method to be exposed through server
 # uses a decorator to automatically convert to and from variants
 
@@ -279,15 +282,14 @@ if __name__ == "__main__":
         mode_handler = SubHandler_mode()
         direction_handler = SubHandler_direction()
         start_handler = SubHandler_start()
-        stop_handler = SubHandler_stop()
+        
         sub_dir = server.create_subscription(500, direction_handler)
         sub_mode = server.create_subscription(500, mode_handler)
         sub_start = server.create_subscription(500, start_handler)
-        sub_stop = server.create_subscription(500,stop_handler)
+        
         handle_mode = sub_mode.subscribe_data_change(mode)
         handle_dir = sub_dir.subscribe_data_change(direction)
         handle_start = sub_start.subscribe_data_change(start)
-        handle_stop = sub_stop.subscribe_data_change(stop)
 
         embed()
         CG.reset()
@@ -297,6 +299,7 @@ if __name__ == "__main__":
         server.stop()
         GPIO.cleanup()          # clean up GPIO settings
         CG.stop_claw()          # stop motors
+        print("cleaned up")
 
 
 
