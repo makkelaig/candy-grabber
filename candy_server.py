@@ -303,11 +303,12 @@ if __name__ == "__main__":
         print(message)
         
     finally:
+        message.set_value("Lost connection to server")
         server.stop()
         GPIO.cleanup()          # clean up GPIO settings
         CG.stop_claw()          # stop motors
         print("cleaned up")
-        message.set_value("Lost connection to server")
+
 
 
 
