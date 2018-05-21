@@ -155,6 +155,7 @@ class SubHandler_start(object):
                 ret = CG.start('remote')
             else:
                 ret = CG.start('remote')
+                message.set_value("ready to play!")
                 
         else:
             ret = CG.stop()
@@ -162,6 +163,7 @@ class SubHandler_start(object):
             state.set_value(CG.state)
             mode.set_value(CG.mode)
             print("stopping game:", state.get_value(), mode.get_value())
+            message.set_value("Stopped game, press start if you want to go again")
         return ret
 
 # method to be exposed through server
@@ -241,6 +243,7 @@ GPIO.add_event_detect(RPi_pins["left"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["right"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["down"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
+#GPIO.add_event_detect(RPi_pins["coinInserted"], GPIO.RISING, callback= CG.start('manual'))
 #GPIO.add_event_detect(RPi_pins["endLeft"], GPIO.BOTH, callback = end_LR)
 #GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
 
@@ -270,6 +273,8 @@ if __name__ == "__main__":
     direction.set_writable()
     mode = candyGrabber.add_variable(idx, "Mode", "None")
     mode.set_writable()
+    message = candyGrabber.add_variable(idx, "Message", "Hello")
+    mode.set_writable()
     #move_cg = candyGrabber.add_method(idx,"move",move_claw,[ua.VariantType.String])
     
     # starting!
@@ -294,12 +299,15 @@ if __name__ == "__main__":
         embed()
         CG.reset()
         print(mode)
-    
+        message.set_value("Hello, press start to play!")
+        print(message)
+        
     finally:
         server.stop()
         GPIO.cleanup()          # clean up GPIO settings
         CG.stop_claw()          # stop motors
         print("cleaned up")
+        message.set_value("Lost connection to server")
 
 
 
