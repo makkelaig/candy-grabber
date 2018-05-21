@@ -95,25 +95,8 @@ AxisDU = Axis(Motor3,("down","up"),EndDU)
 # create Candy Grabber object
 CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
 
-class SubHandler_mode(object):
-    
-    """
-    Subscription Handler. To receive events from server for a subscription
-    """
-    
-    def datachange_notification(self, node, val, data):
-        print("Python: New data change event", node, val)
-        CG.set_mode(val)
-        #move_claw(node,val)
-    
-    def event_notification(self, event):
-        print("Python: New event", event)
-
-
-# method to be exposed through server
-# uses a decorator to automatically convert to and from variants
-@uamethod
-def move_claw(parent, direction):
+#@uamethod
+def move_claw(direction):
     print("move method call with parameter: ", direction)
     if CG.state != "Playing":
         print('You have to start a game first')
@@ -124,15 +107,63 @@ def move_claw(parent, direction):
             ret = False
         else:
             ret = True
-            if val == "none":
+            if direction == "none":
                 CG.stop_claw()
-            if val in ["left","right"]:
+            elif direction in ["left","right"]:
                 CG.AxisLR.move(val)
-            elif val in ["down","up"]:
+            elif direction in ["down","up"]:
                 CG.AxisDU.move(val)
             else:
                 CG.AxisBF.move(val)
             return ret
+        
+        
+class SubHandler_mode(object):
+    
+    """
+    Subscription Handler. To receive events from server for a subscription
+    """
+    
+    def datachange_notification(self, node, val, data):
+        print("Python: New data change event", node, val)
+        #print(val)
+        CG.set_mode(val)
+        #move_claw(node,val)
+    
+    def event_notification(self, event):
+        print("Python: New event", event)
+
+class SubHandler_direction(object):
+ 
+    def datachange_notification(self, node, val, data):
+        print("Python: New data change event", node, val)
+        move_claw(val)
+    
+    def event_notification(self, event):
+        print("Python: New event", event)
+        
+        #move_claw(val)
+        
+class SubHandler_start(object):
+    
+    def datachange_notification(self, node, val, data):
+        print("Python: New data change event", node, val)
+        
+        if CG.state == "Stopped":
+            CG.reset()          
+            ret = CG.start('remote')
+        else:
+            ret = CG.start('remote')
+        return ret
+
+class SubHandler_stop(object):
+    
+    def datachange_notification(self, node, val, data):
+        print("Python: New data change event", node, val)
+        return CG.stop()
+# method to be exposed through server
+# uses a decorator to automatically convert to and from variants
+
 
 
 # callback functions
@@ -187,7 +218,7 @@ def move_DU(channel):
             if (GPIO.input(RPi_pins["down"]))^(GPIO.input(RPi_pins["up"])):
                 if GPIO.input(RPi_pins["down"]):
                     CG.AxisDU.move("down")
-                CG
+                
                 else:
                     CG.AxisDU.move("up")
             else:
@@ -207,8 +238,8 @@ GPIO.add_event_detect(RPi_pins["left"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["right"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["down"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
-GPIO.add_event_detect(RPi_pins["endLeft"], GPIO.BOTH, callback = end_LR)
-GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
+#GPIO.add_event_detect(RPi_pins["endLeft"], GPIO.BOTH, callback = end_LR)
+#GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
 
 if __name__ == "__main__":
     
@@ -223,30 +254,44 @@ if __name__ == "__main__":
     # setup our own namespace
     uri = "http://examples.freeopcua.github.io"
     idx = server.register_namespace(uri)
+    # get Objects node, this is where we should put our nodes
+    objects = server.get_objects_node()
     # create a new node type we can instantiate in our address space
     candyGrabber = objects.add_object(idx, "CandyGrabber")
-    candyGrabber.add_property(0, "State", "Stopped")
-    candyGrabber.add_property(0, "Mode", "None")
-    start = candyGrabber.add_variable(idx,"Start", False)
+    state = candyGrabber.add_variable(idx, "State", "Stopped")
+    start = candyGrabber.add_variable(idx,"Start", 0)
     start.set_writable()        # Set MyVariable to be writable by clients
-    stop = candyGrabber.add_variable(idx,"Stop", False)
+    stop = candyGrabber.add_variable(idx,"Stop", 0)
     stop.set_writable()
     direction = candyGrabber.add_variable(idx, "Direction", "none")
     direction.set_writable()
-    candyGrabber.add_method(idx,"move",move_claw,[ua.VariantType.String])
+    mode = candyGrabber.add_variable(idx, "Mode", "None")
+    mode.set_writable()
+    #move_cg = candyGrabber.add_method(idx,"move",move_claw,[ua.VariantType.String])
     
     # starting!
     server.start()
     print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
     
     try:
+        
         # enable following if you want to subscribe to nodes on server side
         mode_handler = SubHandler_mode()
-        #handle_mode = SubHandler()
-        sub = server.create_subscription(500, mode_handler)
-        handle = sub.subscribe_data_change(Mode)
+        direction_handler = SubHandler_direction()
+        start_handler = SubHandler_start()
+        stop_handler = SubHandler_stop()
+        sub_dir = server.create_subscription(500, direction_handler)
+        sub_mode = server.create_subscription(500, mode_handler)
+        sub_start = server.create_subscription(500, start_handler)
+        sub_stop = server.create_subscription(500,stop_handler)
+        handle_mode = sub_mode.subscribe_data_change(mode)
+        handle_dir = sub_dir.subscribe_data_change(direction)
+        handle_start = sub_start.subscribe_data_change(start)
+        handle_stop = sub_stop.subscribe_data_change(stop)
+
         embed()
         CG.reset()
+        print(mode)
     
     finally:
         server.stop()

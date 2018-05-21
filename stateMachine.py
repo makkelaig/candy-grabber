@@ -12,7 +12,7 @@ class CandyGrabber:
     transitions = [
                    { 'trigger': 'reset', 'source': ['Complete','Stopped'], 'dest': 'Idle','before':'reset_game','after':'game_ready' },
                    { 'trigger': 'start', 'source': 'Idle', 'dest': 'Playing', 'before':'set_mode' },
-                   { 'trigger': 'stop', 'source': '*', 'dest': 'Stopped', 'before':'stop_game' },
+                   { 'trigger': 'stop', 'source': '*', 'dest': 'Stopped', 'before':'stop_claw' },
                    { 'trigger': 'finish', 'source': 'Playing', 'dest': 'Complete' }
                    ]
 
