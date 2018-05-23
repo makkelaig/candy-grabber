@@ -58,7 +58,7 @@ class CandyGrabber:
 
     def quit_game(self,won):
         if self.state == "Playing":
-            if won:
+            if won==True:
                 print('Congratulations! You Won! get your candy')
         #prints out lost and stop axis
             else:

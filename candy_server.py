@@ -74,6 +74,7 @@ RPi_pins = {"left":24,
             "gotCandy":27,
             "coinInserted":16
         }
+
 # for testing without motorshield
 ##m1="mLR"
 ##m2="mBF"
@@ -95,6 +96,8 @@ AxisDU = Axis(Motor3,("down","up"),EndDU)
 
 # create Candy Grabber object
 CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
+#timeout for game
+timeout = Timer(40.0,CG.quit_game,(False,), None)
 
 #@uamethod
 def move_claw(direction):
@@ -242,12 +245,16 @@ def start_manual(channel):
         if CG.state == "Stopped":
             CG.reset()
         CG.start("manual")
-        timer.start()
+        timeout.daemon = True
+        timeout.start()
 
 def won_game(channel):
-    print(GPIO.input(RPi_pins["gotCandy"]))
-    CG.quit_game(1)
-    cancel(timer)
+    if GPIO.input(RPi_pins["gotCandy"])==1:
+        print(GPIO.input(RPi_pins["gotCandy"]))
+        CG.quit_game(True)
+        timeout.cancel()
+        if CG.mode == "remote":
+            message.set_value("You Won!")
     
 # add gpio events and define callbacks
 GPIO.add_event_detect(RPi_pins["back"], GPIO.BOTH, callback= move_BF)
@@ -257,7 +264,7 @@ GPIO.add_event_detect(RPi_pins["right"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["down"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["coinInserted"], GPIO.RISING, callback= start_manual)
-GPIO.add_event_detect(RPi_pins["gotCandy"], GPIO.FALLING, callback = won_game)
+GPIO.add_event_detect(RPi_pins["gotCandy"], GPIO.RISING, callback = won_game)
 #GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
 
 if __name__ == "__main__":
@@ -293,7 +300,7 @@ if __name__ == "__main__":
     # starting!
     server.start()
     print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    timer = threading.Timer(100,CG.quit_game(0))
+    
     try:
         
         # enable following if you want to subscribe to nodes on server side
