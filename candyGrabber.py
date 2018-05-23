@@ -6,7 +6,7 @@ import atexit
 import RPi.GPIO as GPIO
 from datetime import datetime
 from axis import MockSwitch, RealSwitch, Motor, Axis
-#from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 from stateMachine import CandyGrabber
 import time
 import os
@@ -40,7 +40,7 @@ class SubHandler(object):
 # method to be exposed through server
 # uses a decorator to automatically convert to and from variants
 
-@uamethod
+#@uamethod
 def move_claw(parent, direction):
     print("move method call with parameter: ", direction)
     return True

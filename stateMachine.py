@@ -56,7 +56,15 @@ class CandyGrabber:
         self.AxisDU.move("none")
         print('stopping motors')
 
-
+    def quit_game(self,won):
+        if self.state == "Playing":
+            if won:
+                print('Congratulations! You Won! get your candy')
+        #prints out lost and stop axis
+            else:
+                print('sorry, the time is up. You Lost!')
+            self.stop()
+            self.reset()
 
 
 

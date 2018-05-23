@@ -1,16 +1,18 @@
+import RPi.GPIO as GPIO
+from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 import sys
 sys.path.insert(0, "..")
 import logging
 import time
 import atexit
-import RPi.GPIO as GPIO
 from datetime import datetime
 from axis import MockSwitch, RealSwitch, Motor, Axis
-#from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 from stateMachine import CandyGrabber
-import time
+from opcua import ua, uamethod, Server
 import os
 import random
+from threading import Timer
+
 
 try:
     from IPython import embed
@@ -23,25 +25,24 @@ except ImportError:
         shell = code.InteractiveConsole(vars)
         shell.interact()
 
-from opcua import ua, uamethod, Server
 
-###create a default object, no changes to I2C address or frequency
-##mh = Adafruit_MotorHAT(addr=0x60)
-###create motors
-##m1 = mh.getMotor(1)
-##m2 = mh.getMotor(2)
-##m3 = mh.getMotor(3)
-### set the speed to start, from 0 (off) to 255 (max speed)
-##m1.setSpeed(80)
-##m2.setSpeed(80)
-##m3.setSpeed(80)
-### recommended for auto-disabling motors on shutdown!
-##def turnOffMotors():
-##    mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
-##    mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
-##    mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
-##
-##atexit.register(turnOffMotors)
+#create a default object, no changes to I2C address or frequency
+mh = Adafruit_MotorHAT(addr=0x60)
+#create motors
+m1 = mh.getMotor(1)
+m2 = mh.getMotor(2)
+m3 = mh.getMotor(3)
+# set the speed to start, from 0 (off) to 255 (max speed)
+m1.setSpeed(80)
+m2.setSpeed(80)
+m3.setSpeed(80)
+# recommended for auto-disabling motors on shutdown!
+def turnOffMotors():
+    mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
+    mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
+    mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
+
+atexit.register(turnOffMotors)
 
 GPIO.setmode(GPIO.BCM)
 # Controller pins
@@ -74,9 +75,9 @@ RPi_pins = {"left":24,
             "coinInserted":16
         }
 # for testing without motorshield
-m1="mLR"
-m2="mBF"
-m3="mDU"
+##m1="mLR"
+##m2="mBF"
+##m3="mDU"
 # create motor objects
 Motor1 = Motor(m1)
 Motor2 = Motor(m2)
@@ -100,10 +101,12 @@ def move_claw(direction):
     print("move method call with parameter: ", direction)
     if CG.state != "Playing":
         print('You have to start a game first')
+        message.set_value('You have to start a game first')
         ret = False
     else:
         if CG.get_mode() != "remote":
             print('Somebody is playing manually at the moment')
+            message.set_value('Somebody is playing manually at the moment')
             ret = False
         else:
             ret = True
@@ -158,12 +161,14 @@ class SubHandler_start(object):
                 message.set_value("ready to play!")
                 
         else:
-            ret = CG.stop()
-            CG.reset()
-            state.set_value(CG.state)
-            mode.set_value(CG.mode)
-            print("stopping game:", state.get_value(), mode.get_value())
-            message.set_value("Stopped game, press start if you want to go again")
+            if CG.mode == 'remote':
+                ret = CG.stop()
+                CG.reset()
+                state.set_value(CG.state)
+                mode.set_value(CG.mode)
+                print("stopping game:", state.get_value(), mode.get_value())
+                message.set_value("Stopped game, press start if you want to go again")
+            else:message.set_value("You have to start a game first")
         return ret
 
 # method to be exposed through server
@@ -232,10 +237,18 @@ def move_DU(channel):
                     raise ValueError("Invalid Controller Value!")
 
 
-def end_LR(channel):
-    print('Left:', GPIO.input(RPi_pins["endLeft"]))
-    print('Right:', GPIO.input(RPi_pins["endRight"]))
+def start_manual(channel):
+    if CG.mode == "none":
+        if CG.state == "Stopped":
+            CG.reset()
+        CG.start("manual")
+        timer.start()
 
+def won_game(channel):
+    print(GPIO.input(RPi_pins["gotCandy"]))
+    CG.quit_game(1)
+    cancel(timer)
+    
 # add gpio events and define callbacks
 GPIO.add_event_detect(RPi_pins["back"], GPIO.BOTH, callback= move_BF)
 GPIO.add_event_detect(RPi_pins["front"], GPIO.BOTH, callback= move_BF)
@@ -243,8 +256,8 @@ GPIO.add_event_detect(RPi_pins["left"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["right"], GPIO.BOTH, callback= move_LR)
 GPIO.add_event_detect(RPi_pins["down"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
-#GPIO.add_event_detect(RPi_pins["coinInserted"], GPIO.RISING, callback= CG.start('manual'))
-#GPIO.add_event_detect(RPi_pins["endLeft"], GPIO.BOTH, callback = end_LR)
+GPIO.add_event_detect(RPi_pins["coinInserted"], GPIO.RISING, callback= start_manual)
+GPIO.add_event_detect(RPi_pins["gotCandy"], GPIO.FALLING, callback = won_game)
 #GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
 
 if __name__ == "__main__":
@@ -271,7 +284,7 @@ if __name__ == "__main__":
     stop.set_writable()
     direction = candyGrabber.add_variable(idx, "Direction", "none")
     direction.set_writable()
-    mode = candyGrabber.add_variable(idx, "Mode", "None")
+    mode = candyGrabber.add_variable(idx, "Mode", "none")
     mode.set_writable()
     message = candyGrabber.add_variable(idx, "Message", "Hello")
     mode.set_writable()
@@ -280,7 +293,7 @@ if __name__ == "__main__":
     # starting!
     server.start()
     print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    
+    timer = threading.Timer(100,CG.quit_game(0))
     try:
         
         # enable following if you want to subscribe to nodes on server side

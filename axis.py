@@ -38,11 +38,11 @@ class RealSwitch(Endswitch):
     
     def get_end_cw(self):
         self._end_cw = GPIO.input(self.pinCW)
-        return not self._end_cw
+        return self._end_cw
     
     def get_end_ccw(self):
         self._end_ccw = GPIO.input(self.pinCCW)
-        return not self._end_ccw
+        return self._end_ccw
 
 
 #child class for mock endswitch
@@ -91,17 +91,17 @@ class Motor:
     
     def move_cw(self):
         print("move cw motor",self.Id)
-        #self.Id.run(Adafruit_MotorHAT.FORWARD)
+        self.Id.run(Adafruit_MotorHAT.FORWARD)
         time.sleep(0.1)
     
     def move_ccw(self):
         print("move ccw motor ", self.Id)
-        #self.Id.run(Adafruit_MotorHAT.BACKWARD)
+        self.Id.run(Adafruit_MotorHAT.BACKWARD)
         time.sleep(0.1)
     
     def stop(self):
         print("stop motor " ,self.Id)
-        #self.Id.run(Adafruit_MotorHAT.RELEASE)
+        self.Id.run(Adafruit_MotorHAT.RELEASE)
         time.sleep(0.1)
 
 
