@@ -1,6 +1,13 @@
+############################################
+#                                          #
+#  Candy Grabber class with state machine  #
+#                                          #
+############################################
+
 import random
 from axis import MockSwitch, RealSwitch, Motor, Axis
 from transitions import Machine
+"""For more infos about state machine got to: https://github.com/pytransitions/transitions.git"""
 
 
 
@@ -8,12 +15,12 @@ class CandyGrabber:
     
     coin_inserted = False
     
-    states = ['Stopped', 'Idle', 'Playing', 'Complete']
+    states = ['Stopped', 'Idle', 'Playing']
     transitions = [
-                   { 'trigger': 'reset', 'source': ['Complete','Stopped'], 'dest': 'Idle','before':'reset_game','after':'game_ready' },
+                   { 'trigger': 'reset', 'source':'Stopped', 'dest': 'Idle','before':'reset_game','after':'game_ready' },
                    { 'trigger': 'start', 'source': 'Idle', 'dest': 'Playing', 'before':'set_mode' },
                    { 'trigger': 'stop', 'source': '*', 'dest': 'Stopped', 'before':'stop_claw' },
-                   { 'trigger': 'finish', 'source': 'Playing', 'dest': 'Complete' }
+                   #{ 'trigger': 'finish', 'source': 'Playing', 'dest': 'Complete' }
                    ]
 
     def __init__(self, AxisBF, AxisLR, AxisDU):

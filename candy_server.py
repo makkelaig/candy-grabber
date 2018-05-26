@@ -1,7 +1,13 @@
-import RPi.GPIO as GPIO
-from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+"""
+    Program for controlling the candy grabber remotely or manually
+    opc ua server holds opc ua object "CandyGrabber" and object "CG" from type CandyGrabber
+    
+"""
+
 import sys
 sys.path.insert(0, "..")
+import RPi.GPIO as GPIO
+from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 import logging
 import time
 import atexit
@@ -11,9 +17,10 @@ from stateMachine import CandyGrabber
 from opcua import ua, uamethod, Server
 import os
 import random
-from threading import Timer
+# from threading import Timer
 
 
+""" shell for interaction during runtime """
 try:
     from IPython import embed
 except ImportError:
@@ -26,16 +33,24 @@ except ImportError:
         shell.interact()
 
 
-#create a default object, no changes to I2C address or frequency
+""" Motor Setup """
+# create a default object, no changes to I2C address or frequency
 mh = Adafruit_MotorHAT(addr=0x60)
-#create motors
+
+# get DC motor objects
 m1 = mh.getMotor(1)
 m2 = mh.getMotor(2)
 m3 = mh.getMotor(3)
+# motor mocks for running code without motorshield
+##m1="mLR"
+##m2="mBF"
+##m3="mDU"
+
 # set the speed to start, from 0 (off) to 255 (max speed)
 m1.setSpeed(80)
 m2.setSpeed(80)
 m3.setSpeed(80)
+
 # recommended for auto-disabling motors on shutdown!
 def turnOffMotors():
     mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
@@ -44,6 +59,7 @@ def turnOffMotors():
 
 atexit.register(turnOffMotors)
 
+""" GPIO Setup """
 GPIO.setmode(GPIO.BCM)
 # Controller pins
 GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -60,7 +76,7 @@ GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(16, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-# Raspberry Pi pins as a list
+# Raspberry Pi pins as a dictionary
 RPi_pins = {"left":24,
             "right":25,
             "front":23,
@@ -75,16 +91,14 @@ RPi_pins = {"left":24,
             "coinInserted":16
         }
 
-# for testing without motorshield
-##m1="mLR"
-##m2="mBF"
-##m3="mDU"
-# create motor objects
+""" create objects of candy grabber """
+
+# create motors
 Motor1 = Motor(m1)
 Motor2 = Motor(m2)
 Motor3 = Motor(m3)
 
-# create endswitch objects
+# create endswitches
 EndDU = MockSwitch()
 EndBF = RealSwitch(RPi_pins["endBack"],RPi_pins["endFront"])
 EndLR = RealSwitch(RPi_pins["endLeft"],RPi_pins["endRight"])
@@ -96,12 +110,19 @@ AxisDU = Axis(Motor3,("down","up"),EndDU)
 
 # create Candy Grabber object
 CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
-#timeout for game
-timeout = Timer(40.0,CG.quit_game,(False,), None)
 
-#@uamethod
+# timeout for game
+#timeout = Timer(40.0,CG.quit_game,(False,), None)
+
+
+
+""" ////////////////////////////// methods ///////////////////////////////// """
+
+# method move_claw for subhandler_direction in opcua server
 def move_claw(direction):
+
     print("move method call with parameter: ", direction)
+    
     if CG.state != "Playing":
         print('You have to start a game first')
         message.set_value('You have to start a game first')
@@ -122,12 +143,14 @@ def move_claw(direction):
             else:
                 CG.AxisBF.move(direction)
             return ret
-        
-        
+
+
+""" ////////////////////////// subhandler classes for opcua server //////////////////////////// """
+
 class SubHandler_mode(object):
     
     """
-    Subscription Handler. To receive events from server for a subscription
+    Subscription Handler: reacts to mode changes and updates mode of CG object
     """
     
     def datachange_notification(self, node, val, data):
@@ -139,7 +162,13 @@ class SubHandler_mode(object):
     def event_notification(self, event):
         print("Python: New event", event)
 
+
+
 class SubHandler_direction(object):
+    
+    """
+    Subscription Handler: moves claw when
+    """
  
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
@@ -147,10 +176,15 @@ class SubHandler_direction(object):
     
     def event_notification(self, event):
         print("Python: New event", event)
-        
         #move_claw(val)
-        
+
+
+
 class SubHandler_start(object):
+    
+    """
+    Subscription Handler: reacts to dashboard buttons "Start" (start=True) and "Stop" (start=False)
+    """
     
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
@@ -174,12 +208,13 @@ class SubHandler_start(object):
             else:message.set_value("You have to start a game first")
         return ret
 
-# method to be exposed through server
-# uses a decorator to automatically convert to and from variants
 
 
+""" //////////////////////////// callback functions for manual mode //////////////////////////// """
 
-# callback functions
+""" one method for each controller """
+
+# move back/none/front
 def move_BF(channel):
     if CG.state != "Playing":
         print('You have to start a game first')
@@ -198,7 +233,7 @@ def move_BF(channel):
                 if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
                     raise ValueError('Invalid Controller Value!')
 
-
+# move left/none/right
 def move_LR(channel):
     if CG.state != "Playing":
         print('You have to start a game first')
@@ -218,7 +253,7 @@ def move_LR(channel):
                 if GPIO.input(RPi_pins["left"]) and GPIO.input(RPi_pins["right"]):
                     raise ValueError('Invalid Controller Value!')
 
-
+# move down/none/up
 def move_DU(channel):
     if CG.state != "Playing":
         print('You have to start a game first')
@@ -287,8 +322,8 @@ if __name__ == "__main__":
     state = candyGrabber.add_variable(idx, "State", "Stopped")
     start = candyGrabber.add_variable(idx,"Start", 0)
     start.set_writable()        # Set MyVariable to be writable by clients
-    stop = candyGrabber.add_variable(idx,"Stop", 0)
-    stop.set_writable()
+    #stop = candyGrabber.add_variable(idx,"Stop", 0)
+    #stop.set_writable()
     direction = candyGrabber.add_variable(idx, "Direction", "none")
     direction.set_writable()
     mode = candyGrabber.add_variable(idx, "Mode", "none")

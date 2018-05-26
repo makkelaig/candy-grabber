@@ -19,10 +19,10 @@ class Endswitch(ABC):
     def __init__(self):
         super().__init__()
 
-    def get_endCW(self):
+    def get_end_cw(self):
         pass
     #return self._endCW
-    def get_endCCW(self):
+    def get_end_ccw(self):
         pass
 #return self._endCCW
 
