@@ -124,7 +124,6 @@ class Axis:
             if not self.endswitch.get_end_cw():
                 self.motor.move_cw()
                 #print(self.motor.Id,': moving ', direction)
-                #continue
 #                if (self.endswitch.__class__.__name__ == "MockSwitch"):
 #                    self.endswitch.increase_counter()
 #                    self.endswitch.print_counter()

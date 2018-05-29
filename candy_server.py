@@ -124,8 +124,8 @@ def move_claw(direction):
     print("move method call with parameter: ", direction)
     
     if CG.state != "Playing":
-        print('You have to start a game first')
-        message.set_value('You have to start a game first')
+        #print('You have to start a game first')
+        #message.set_value('You have to start a game first')
         ret = False
     else:
         if CG.get_mode() != "remote":
@@ -155,9 +155,7 @@ class SubHandler_mode(object):
     
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
-        #print(val)
         CG.set_mode(val)
-        #move_claw(node,val)
     
     def event_notification(self, event):
         print("Python: New event", event)
@@ -176,7 +174,6 @@ class SubHandler_direction(object):
     
     def event_notification(self, event):
         print("Python: New event", event)
-        #move_claw(val)
 
 
 
@@ -192,22 +189,37 @@ class SubHandler_start(object):
         if val==True:
             if CG.state == "Stopped":
                 CG.reset()          
-                ret = CG.start('remote')
+                CG.start('remote')
             else:
-                ret = CG.start('remote')
-                message.set_value("ready to play!")
+                CG.start('remote')
+            message.set_value("ready to play!")
                 
         else:
             if CG.mode == 'remote':
-                ret = CG.stop()
+                CG.stop()
                 CG.reset()
                 state.set_value(CG.state)
                 mode.set_value(CG.mode)
                 print("stopping game:", state.get_value(), mode.get_value())
                 message.set_value("Stopped game, press start if you want to go again")
-            else:message.set_value("You have to start a game first")
+            #else:message.set_value("You have to start a game first")
+        state.set_value(CG.state)
         return ret
 
+class SubHandler_timer(object):
+    
+    """
+    Subscription Handler: reacts to timeOut
+    """
+    
+    def datachange_notification(self, node, val, data):
+        print("Python: New data change event", node, val)
+        if val == 1:
+            CG.quit_game(0)
+            state.set_value(CG.state)
+            start.set_value(0)
+            timer.set_value(0)
+            message.set_value("Sorry, time's up. You Lost!")   
 
 
 """ //////////////////////////// callback functions for manual mode //////////////////////////// """
@@ -217,21 +229,21 @@ class SubHandler_start(object):
 # move back/none/front
 def move_BF(channel):
     if CG.state != "Playing":
-        print('You have to start a game first')
+        print("You have to start a game first")
     else:
         print(channel)
-        if CG.get_mode() != "manual":
-            print('Somebody is playing remotely at the moment')
+        if CG.get_mode() != 'manual':
+            print("Somebody is playing remotely at the moment")
         else:
-            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins["front"])):
-                if GPIO.input(RPi_pins["back"]):
-                    CG.AxisBF.move("back")
+            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins['front'])):
+                if GPIO.input(RPi_pins['back']):
+                    CG.AxisBF.move('back')
                 else:
-                    CG.AxisBF.move("front")
+                    CG.AxisBF.move('front')
             else:
-                CG.AxisBF.move("none")
-                if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
-                    raise ValueError('Invalid Controller Value!')
+                CG.AxisBF.move('none')
+                if GPIO.input(RPi_pins['back']) and GPIO.input(RPi_pins['front']):
+                    raise ValueError("Invalid Controller Value!")
 
 # move left/none/right
 def move_LR(channel):
@@ -280,16 +292,17 @@ def start_manual(channel):
         if CG.state == "Stopped":
             CG.reset()
         CG.start("manual")
-        timeout.daemon = True
-        timeout.start()
+        #timeout.daemon = True
+        #timeout.start()
 
 def won_game(channel):
     if GPIO.input(RPi_pins["gotCandy"])==1:
         print(GPIO.input(RPi_pins["gotCandy"]))
         CG.quit_game(True)
-        timeout.cancel()
+        #timeout.cancel()
         if CG.mode == "remote":
             message.set_value("You Won!")
+            state.set_value(CG.state)
     
 # add gpio events and define callbacks
 GPIO.add_event_detect(RPi_pins["back"], GPIO.BOTH, callback= move_BF)
@@ -300,7 +313,6 @@ GPIO.add_event_detect(RPi_pins["down"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["coinInserted"], GPIO.RISING, callback= start_manual)
 GPIO.add_event_detect(RPi_pins["gotCandy"], GPIO.RISING, callback = won_game)
-#GPIO.add_event_detect(RPi_pins["endRight"], GPIO.BOTH, callback = end_LR)
 
 if __name__ == "__main__":
     
@@ -322,14 +334,16 @@ if __name__ == "__main__":
     state = candyGrabber.add_variable(idx, "State", "Stopped")
     start = candyGrabber.add_variable(idx,"Start", 0)
     start.set_writable()        # Set MyVariable to be writable by clients
-    #stop = candyGrabber.add_variable(idx,"Stop", 0)
-    #stop.set_writable()
     direction = candyGrabber.add_variable(idx, "Direction", "none")
     direction.set_writable()
     mode = candyGrabber.add_variable(idx, "Mode", "none")
     mode.set_writable()
-    message = candyGrabber.add_variable(idx, "Message", "Hello")
-    mode.set_writable()
+    message = candyGrabber.add_variable(idx, "Message", "Hi there, press start if you want to play")
+    message.set_writable()
+    timer = candyGrabber.add_variable(idx, "Timer", 0)
+    timer.set_writable()
+    #won = candyGrabber.add_variable(idx, "Won", 0)
+    #won.set_writable()
     #move_cg = candyGrabber.add_method(idx,"move",move_claw,[ua.VariantType.String])
     
     # starting!
@@ -337,20 +351,23 @@ if __name__ == "__main__":
     print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
     
     try:
-        
-        # enable following if you want to subscribe to nodes on server side
+
+        # subscribe to nodes on server side
         mode_handler = SubHandler_mode()
         direction_handler = SubHandler_direction()
         start_handler = SubHandler_start()
+        timer_handler = SubHandler_timer()
         
-        sub_dir = server.create_subscription(500, direction_handler)
-        sub_mode = server.create_subscription(500, mode_handler)
-        sub_start = server.create_subscription(500, start_handler)
+        sub_dir = server.create_subscription(100, handler=direction_handler)
+        sub_mode = server.create_subscription(50, mode_handler)
+        sub_start = server.create_subscription(50, start_handler)
+        sub_timer = server.create_subscription(30, timer_handler)
         
         handle_mode = sub_mode.subscribe_data_change(mode)
         handle_dir = sub_dir.subscribe_data_change(direction)
         handle_start = sub_start.subscribe_data_change(start)
-
+        handle_timer = sub_timer.subscribe_data_change(timer)
+        
         embed()
         CG.reset()
         print(mode)
