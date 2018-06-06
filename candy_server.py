@@ -111,6 +111,9 @@ AxisDU = Axis(Motor3,("down","up"),EndDU)
 # create Candy Grabber object
 CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
 
+# timeout for game
+#timeout = Timer(40.0,CG.quit_game,(False,), None)
+
 
 
 """ ////////////////////////////// methods ///////////////////////////////// """
@@ -121,16 +124,16 @@ def move_claw(direction):
     print("move method call with parameter: ", direction)
     
     if CG.state != "Playing":
-        #print("You have to start a game first")
-        #message.set_value("You have to start a game first")
-        #ret = False
+        #print('You have to start a game first')
+        #message.set_value('You have to start a game first')
+        ret = False
     else:
         if CG.get_mode() != "remote":
-            print("Somebody is playing manually at the moment")
-            message.set_value("Somebody is playing manually at the moment")
-            #ret = False
+            print('Somebody is playing manually at the moment')
+            message.set_value('Somebody is playing manually at the moment')
+            ret = False
         else:
-            #ret = True
+            ret = True
             if direction == "none":
                 CG.stop_claw()
             elif direction in ["left","right"]:
@@ -139,7 +142,7 @@ def move_claw(direction):
                 CG.AxisDU.move(direction)
             else:
                 CG.AxisBF.move(direction)
-    #return ret
+            return ret
 
 
 """ ////////////////////////// subhandler classes for opcua server //////////////////////////// """
@@ -162,7 +165,7 @@ class SubHandler_mode(object):
 class SubHandler_direction(object):
     
     """
-    Subscription Handler: moves claw while a direction button is pressed
+    Subscription Handler: moves claw when
     """
  
     def datachange_notification(self, node, val, data):
@@ -186,13 +189,13 @@ class SubHandler_start(object):
         if val==True:
             if CG.state == "Stopped":
                 CG.reset()          
-                CG.start("remote")
+                CG.start('remote')
             else:
-                CG.start("remote")
+                CG.start('remote')
             message.set_value("ready to play!")
                 
         else:
-            if CG.mode == "remote":
+            if CG.mode == 'remote':
                 CG.stop()
                 CG.reset()
                 state.set_value(CG.state)
@@ -206,7 +209,7 @@ class SubHandler_start(object):
 class SubHandler_timer(object):
     
     """
-    Subscription Handler: reacts to timeOut signal from Node-RED
+    Subscription Handler: reacts to timeOut
     """
     
     def datachange_notification(self, node, val, data):
@@ -216,7 +219,7 @@ class SubHandler_timer(object):
             state.set_value(CG.state)
             start.set_value(0)
             timer.set_value(0)
-            message.set_value("Sorry, time's up. You Lost!")
+            message.set_value("Sorry, time's up. You Lost!")   
 
 
 """ //////////////////////////// callback functions for manual mode //////////////////////////// """
@@ -229,27 +232,27 @@ def move_BF(channel):
         print("You have to start a game first")
     else:
         print(channel)
-        if CG.get_mode() != "manual":
+        if CG.get_mode() != 'manual':
             print("Somebody is playing remotely at the moment")
         else:
-            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins["front"])):
-                if GPIO.input(RPi_pins["back"]):
-                    CG.AxisBF.move("back")
+            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins['front'])):
+                if GPIO.input(RPi_pins['back']):
+                    CG.AxisBF.move('back')
                 else:
-                    CG.AxisBF.move("front")
+                    CG.AxisBF.move('front')
             else:
-                CG.AxisBF.move("none")
-                if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
-                    raise ValueError("Invalid controller value!")
+                CG.AxisBF.move('none')
+                if GPIO.input(RPi_pins['back']) and GPIO.input(RPi_pins['front']):
+                    raise ValueError("Invalid Controller Value!")
 
 # move left/none/right
 def move_LR(channel):
     if CG.state != "Playing":
-        print("You have to start a game first")
+        print('You have to start a game first')
     else:
         print(channel)
         if CG.get_mode() != "manual":
-            print("Somebody is playing remotely at the moment")
+            print('Somebody is playing remotely at the moment')
         else:
             print(channel)
             if (GPIO.input(RPi_pins["left"]))^(GPIO.input(RPi_pins["right"])):
@@ -260,16 +263,16 @@ def move_LR(channel):
             else:
                 CG.AxisLR.move("none")
                 if GPIO.input(RPi_pins["left"]) and GPIO.input(RPi_pins["right"]):
-                    raise ValueError("Invalid controller value!")
+                    raise ValueError('Invalid Controller Value!')
 
 # move down/none/up
 def move_DU(channel):
     if CG.state != "Playing":
-        print("You have to start a game first")
+        print('You have to start a game first')
     else:
         print(channel)
         if CG.get_mode() != "manual":
-            print("Somebody is playing remotely at the moment")
+            print('Somebody is playing remotely at the moment')
         else:
             print(channel)
             if (GPIO.input(RPi_pins["down"]))^(GPIO.input(RPi_pins["up"])):
@@ -281,24 +284,24 @@ def move_DU(channel):
             else:
                 CG.AxisDU.move("none")
                 if GPIO.input(RPi_pins["down"]) and GPIO.input(RPi_pins["up"]):
-                    raise ValueError("Invalid controller value!")
+                    raise ValueError("Invalid Controller Value!")
 
-# callback for coinInserted
+
 def start_manual(channel):
     if CG.mode == "none":
         if CG.state == "Stopped":
             CG.reset()
         CG.start("manual")
-        state.set_value(CG.state)
+        #timeout.daemon = True
+        #timeout.start()
 
-# callback for gotCandy Sensor
 def won_game(channel):
     if GPIO.input(RPi_pins["gotCandy"])==1:
         print(GPIO.input(RPi_pins["gotCandy"]))
         CG.quit_game(True)
         #timeout.cancel()
         if CG.mode == "remote":
-            message.set_value("You Won! Get your candy")
+            message.set_value("You Won!")
             state.set_value(CG.state)
     
 # add gpio events and define callbacks
@@ -355,10 +358,10 @@ if __name__ == "__main__":
         start_handler = SubHandler_start()
         timer_handler = SubHandler_timer()
         
-        sub_dir = server.create_subscription(500, handler=direction_handler)
-        sub_mode = server.create_subscription(500, mode_handler)
-        sub_start = server.create_subscription(500, start_handler)
-        sub_timer = server.create_subscription(500, timer_handler)
+        sub_dir = server.create_subscription(100, handler=direction_handler)
+        sub_mode = server.create_subscription(50, mode_handler)
+        sub_start = server.create_subscription(50, start_handler)
+        sub_timer = server.create_subscription(30, timer_handler)
         
         handle_mode = sub_mode.subscribe_data_change(mode)
         handle_dir = sub_dir.subscribe_data_change(direction)
