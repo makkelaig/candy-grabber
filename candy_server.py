@@ -192,6 +192,7 @@ class SubHandler_start(object):
                 CG.start('remote')
             else:
                 CG.start('remote')
+            #mode.set_value(CG.mode)
             message.set_value("ready to play!")
                 
         else:
@@ -298,11 +299,12 @@ def start_manual(channel):
 def won_game(channel):
     if GPIO.input(RPi_pins["gotCandy"])==1:
         print(GPIO.input(RPi_pins["gotCandy"]))
-        CG.quit_game(True)
         #timeout.cancel()
         if CG.mode == "remote":
             message.set_value("You Won!")
-            state.set_value(CG.state)
+        CG.quit_game(True)
+        state.set_value(CG.state)
+        start.set_value(0)
     
 # add gpio events and define callbacks
 GPIO.add_event_detect(RPi_pins["back"], GPIO.BOTH, callback= move_BF)
