@@ -111,29 +111,27 @@ AxisDU = Axis(Motor3,("down","up"),EndDU)
 # create Candy Grabber object
 CG = CandyGrabber(AxisBF,AxisLR,AxisDU)
 
-# timeout for game
-#timeout = Timer(40.0,CG.quit_game,(False,), None)
+
+""" //////////////////// methods /////////////////////// """
 
 
-
-""" ////////////////////////////// methods ///////////////////////////////// """
-
-# method move_claw for subhandler_direction in opcua server
 def move_claw(direction):
-
+    
+    """
+    method move_claw for subhandler_direction in opcua server
+    """
+    
     print("move method call with parameter: ", direction)
     
     if CG.state != "Playing":
-        #print('You have to start a game first')
-        #message.set_value('You have to start a game first')
+        #message.set_value("You have to start a game first")
         ret = False
     else:
         if CG.get_mode() != "remote":
-            print('Somebody is playing manually at the moment')
-            message.set_value('Somebody is playing manually at the moment')
+            print("Somebody is playing manually at the moment")
+            message.set_value("Somebody is playing manually at the moment")
             ret = False
         else:
-            ret = True
             if direction == "none":
                 CG.stop_claw()
             elif direction in ["left","right"]:
@@ -142,10 +140,11 @@ def move_claw(direction):
                 CG.AxisDU.move(direction)
             else:
                 CG.AxisBF.move(direction)
+            ret = True
             return ret
 
 
-""" ////////////////////////// subhandler classes for opcua server //////////////////////////// """
+""" //////////// subhandler classes for opcua server ////////// """
 
 class SubHandler_mode(object):
     
@@ -165,7 +164,8 @@ class SubHandler_mode(object):
 class SubHandler_direction(object):
     
     """
-    Subscription Handler: moves claw when
+    Subscription Handler: moves claw when a direction button is pressed in user interface;
+    direction val can be "left", "right", "front", "back", "up", "down" or "none"
     """
  
     def datachange_notification(self, node, val, data):
@@ -185,47 +185,47 @@ class SubHandler_start(object):
     
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
-        ret = False
         if val==True:
             if CG.state == "Stopped":
                 CG.reset()          
-                CG.start('remote')
+                CG.start("remote")
             else:
-                CG.start('remote')
-            #mode.set_value(CG.mode)
+                CG.start("remote")
             message.set_value("ready to play!")
                 
         else:
-            if CG.mode == 'remote':
+            if CG.mode == "remote":
                 CG.stop()
                 CG.reset()
                 state.set_value(CG.state)
                 mode.set_value(CG.mode)
                 print("stopping game:", state.get_value(), mode.get_value())
                 message.set_value("Stopped game, press start if you want to go again")
-            #else:message.set_value("You have to start a game first")
+            
         state.set_value(CG.state)
-        return ret
+
 
 class SubHandler_timer(object):
     
     """
-    Subscription Handler: reacts to timeOut
+    Subscription Handler: stops game if timer variable is set, resets timer
     """
     
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
         if val == 1:
-            CG.quit_game(0)
+            CG.quit_game(0) # lost game
             state.set_value(CG.state)
             start.set_value(0)
             timer.set_value(0)
             message.set_value("Sorry, time's up. You Lost!")   
 
 
-""" //////////////////////////// callback functions for manual mode //////////////////////////// """
+""" ///////////// callback functions for manual mode ////////////// """
 
-""" one method for each controller """
+""" 
+methods for physical controller switches
+"""
 
 # move back/none/front
 def move_BF(channel):
@@ -233,27 +233,27 @@ def move_BF(channel):
         print("You have to start a game first")
     else:
         print(channel)
-        if CG.get_mode() != 'manual':
+        if CG.get_mode() != "manual":
             print("Somebody is playing remotely at the moment")
         else:
-            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins['front'])):
-                if GPIO.input(RPi_pins['back']):
-                    CG.AxisBF.move('back')
+            if (GPIO.input(RPi_pins["back"]))^(GPIO.input(RPi_pins["front"])):
+                if GPIO.input(RPi_pins["back"]):
+                    CG.AxisBF.move("back")
                 else:
-                    CG.AxisBF.move('front')
+                    CG.AxisBF.move("front")
             else:
-                CG.AxisBF.move('none')
-                if GPIO.input(RPi_pins['back']) and GPIO.input(RPi_pins['front']):
+                CG.AxisBF.move("none")
+                if GPIO.input(RPi_pins["back"]) and GPIO.input(RPi_pins["front"]):
                     raise ValueError("Invalid Controller Value!")
 
 # move left/none/right
 def move_LR(channel):
     if CG.state != "Playing":
-        print('You have to start a game first')
+        print("You have to start a game first")
     else:
         print(channel)
         if CG.get_mode() != "manual":
-            print('Somebody is playing remotely at the moment')
+            print("Somebody is playing remotely at the moment")
         else:
             print(channel)
             if (GPIO.input(RPi_pins["left"]))^(GPIO.input(RPi_pins["right"])):
@@ -264,16 +264,16 @@ def move_LR(channel):
             else:
                 CG.AxisLR.move("none")
                 if GPIO.input(RPi_pins["left"]) and GPIO.input(RPi_pins["right"]):
-                    raise ValueError('Invalid Controller Value!')
+                    raise ValueError("Invalid Controller Value!")
 
 # move down/none/up
 def move_DU(channel):
     if CG.state != "Playing":
-        print('You have to start a game first')
+        print("You have to start a game first")
     else:
         print(channel)
         if CG.get_mode() != "manual":
-            print('Somebody is playing remotely at the moment')
+            print("Somebody is playing remotely at the moment")
         else:
             print(channel)
             if (GPIO.input(RPi_pins["down"]))^(GPIO.input(RPi_pins["up"])):
@@ -289,20 +289,23 @@ def move_DU(channel):
 
 
 def start_manual(channel):
+    """
+    start game if coin inserted
+    """
     if CG.mode == "none":
         if CG.state == "Stopped":
             CG.reset()
         CG.start("manual")
-        #timeout.daemon = True
-        #timeout.start()
 
 def won_game(channel):
+    """
+    quit game when got candy
+    """
     if GPIO.input(RPi_pins["gotCandy"])==1:
-        print(GPIO.input(RPi_pins["gotCandy"]))
-        #timeout.cancel()
+        #print(GPIO.input(RPi_pins["gotCandy"]))
         if CG.mode == "remote":
             message.set_value("You Won!")
-        CG.quit_game(True)
+        CG.quit_game(True) #won game
         state.set_value(CG.state)
         start.set_value(0)
     
@@ -316,6 +319,9 @@ GPIO.add_event_detect(RPi_pins["up"], GPIO.BOTH, callback= move_DU)
 GPIO.add_event_detect(RPi_pins["coinInserted"], GPIO.RISING, callback= start_manual)
 GPIO.add_event_detect(RPi_pins["gotCandy"], GPIO.RISING, callback = won_game)
 
+
+""" //////////////////////////// main /////////////////////////////////// """
+
 if __name__ == "__main__":
     
     # optional: setup logging
@@ -323,19 +329,22 @@ if __name__ == "__main__":
     
     # setup server
     server = Server()
-    #server.disable_clock()
     server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
     server.set_server_name("FreeOpcUa Example Server")
+    
     # setup our own namespace
     uri = "http://examples.freeopcua.github.io"
     idx = server.register_namespace(uri)
-    # get Objects node, this is where we should put our nodes
+    
+    # get objects node, this is where we should put our nodes
     objects = server.get_objects_node()
+    
     # create a new node type we can instantiate in our address space
     candyGrabber = objects.add_object(idx, "CandyGrabber")
+    # with features
     state = candyGrabber.add_variable(idx, "State", "Stopped")
     start = candyGrabber.add_variable(idx,"Start", 0)
-    start.set_writable()        # Set MyVariable to be writable by clients
+    start.set_writable()
     direction = candyGrabber.add_variable(idx, "Direction", "none")
     direction.set_writable()
     mode = candyGrabber.add_variable(idx, "Mode", "none")
@@ -344,9 +353,6 @@ if __name__ == "__main__":
     message.set_writable()
     timer = candyGrabber.add_variable(idx, "Timer", 0)
     timer.set_writable()
-    #won = candyGrabber.add_variable(idx, "Won", 0)
-    #won.set_writable()
-    #move_cg = candyGrabber.add_method(idx,"move",move_claw,[ua.VariantType.String])
     
     # starting!
     server.start()
@@ -354,12 +360,13 @@ if __name__ == "__main__":
     
     try:
 
-        # subscribe to nodes on server side
+        # create handler objects
         mode_handler = SubHandler_mode()
         direction_handler = SubHandler_direction()
         start_handler = SubHandler_start()
         timer_handler = SubHandler_timer()
         
+        # subscribe to nodes on server side
         sub_dir = server.create_subscription(100, handler=direction_handler)
         sub_mode = server.create_subscription(50, mode_handler)
         sub_start = server.create_subscription(50, start_handler)
@@ -370,15 +377,17 @@ if __name__ == "__main__":
         handle_start = sub_start.subscribe_data_change(start)
         handle_timer = sub_timer.subscribe_data_change(timer)
         
+        # embed interactive shell
         embed()
+        
+        # reset Candy Grabber
         CG.reset()
         print(mode)
         message.set_value("Hello, press start to play!")
         print(message)
         
     finally:
-        #message.set_value("Lost connection to server")
-        server.stop()
+        server.stop()           # stop server
         GPIO.cleanup()          # clean up GPIO settings
         CG.stop_claw()          # stop motors
         print("cleaned up")

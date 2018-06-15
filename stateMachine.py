@@ -7,11 +7,15 @@
 import random
 from axis import MockSwitch, RealSwitch, Motor, Axis
 from transitions import Machine
-"""For more infos about state machine got to: https://github.com/pytransitions/transitions.git"""
-
-
+"""
+    State machine by Alexander Neumann and others, 
+    available at: https://github.com/pytransitions/transitions.git
+"""
 
 class CandyGrabber:
+    """
+    abstract representation of a toy candy grabber, 
+    """
     
     coin_inserted = False
     
@@ -20,7 +24,6 @@ class CandyGrabber:
                    { 'trigger': 'reset', 'source':'Stopped', 'dest': 'Idle','before':'reset_game','after':'game_ready' },
                    { 'trigger': 'start', 'source': 'Idle', 'dest': 'Playing', 'before':'set_mode' },
                    { 'trigger': 'stop', 'source': '*', 'dest': 'Stopped', 'before':'stop_claw' },
-                   #{ 'trigger': 'finish', 'source': 'Playing', 'dest': 'Complete' }
                    ]
 
     def __init__(self, AxisBF, AxisLR, AxisDU):
@@ -55,25 +58,19 @@ class CandyGrabber:
         print('resetting')
         self.mode = 'none'
 
-
     def stop_claw(self):
         #turn off motors
-        self.AxisLR.move("none")
-        self.AxisBF.move("none")
-        self.AxisDU.move("none")
+        self.AxisLR.move('none')
+        self.AxisBF.move('none')
+        self.AxisDU.move('none')
         print('stopping motors')
 
     def quit_game(self,won):
-        if self.state == "Playing":
+        if self.state == 'Playing':
             if won==True:
                 print('Congratulations! You Won! get your candy')
-        #prints out lost and stop axis
             else:
                 print('sorry, the time is up. You Lost!')
             self.stop()
             self.reset()
 
-
-
-#CG = CandyGrabber()
-#CG.state

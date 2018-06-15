@@ -1,36 +1,40 @@
-########Class Axis##############
+######## Class Axis ############
 #                              #
 #  Each Axis consists of one   #
-#  motor and two endswitches   #
+#  motor and two end-switches  #
 #                              #
 ################################
+
 import time
 import atexit
 import RPi.GPIO as GPIO
 from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 from abc import ABC, abstractmethod
 
-#GPIO.setmode(GPIO.BCM)
 
-
-#abstract base class endswitch
 class Endswitch(ABC):
+    """
+    Abstract base class endswitch
+    """
     
     def __init__(self):
         super().__init__()
 
     def get_end_cw(self):
         pass
-    #return self._endCW
+
     def get_end_ccw(self):
         pass
-#return self._endCCW
 
 
-#child class for real endswitch
+
 class RealSwitch(Endswitch):
+    """
+    Child class for real endswitch
+    """
     _end_cw = False
     _end_ccw = False
+    
     #takes endswitch pin numbers as arguments
     def __init__(self, pin_end_cw, pin_end_ccw):
         self.pinCW = pin_end_cw
@@ -45,8 +49,10 @@ class RealSwitch(Endswitch):
         return self._end_ccw
 
 
-#child class for mock endswitch
 class MockSwitch(Endswitch):
+    """
+    Child class for mock endswitch
+    """
     _end_cw = False
     _end_ccw = False
     
@@ -56,36 +62,15 @@ class MockSwitch(Endswitch):
     
     def get_end_cw(self):
         return False
-#        if (self._counter >= 3):
-#            self._end_cw = True
-#        else:
-#            self._end_cw = False
-#        return self._end_cw
 
     def get_end_ccw(self):
         return False
-#        if (self._counter <= 0):
-#            self._end_ccw = True
-#            self.reset_counter()
-#        else:
-#            self._end_ccw = False
-#        return self._end_ccw
-
-    def increase_counter(self):
-        self._counter += 1
-    
-    def decrease_counter(self):
-        self._counter -= 1
-    
-    def reset_counter(self):
-        self._counter = 0
-    
-    def print_counter(self):
-        print(self._counter)
 
 
 class Motor:
-    #takes the mh.motor as input
+    """
+    takes the mh.motor object as input
+    """
     def __init__(self,motorId):
         self.Id = motorId
     
@@ -106,8 +91,11 @@ class Motor:
 
 
 class Axis:
-    # parameters are: motor-object, directions, endswitch object
-    # directions is a tuple with two strings, i.e. ("right","left")
+    """
+    An Axis consists of a motor and an endswitch
+    parameters are: Motor-object, directions, Endswitch object;
+    directions is a tuple with two strings, i.e. ("right","left")
+    """
     def __init__(self,motor,directions_array,Endswitch):
         self.motor = motor
         self.endswitch = Endswitch
@@ -117,35 +105,21 @@ class Axis:
         
         if direction == "none":
             self.motor.stop()
-            #print(self.motor.Id, ':stop')
         
         elif self.directions[0] == direction:
-            
             if not self.endswitch.get_end_cw():
                 self.motor.move_cw()
-                #print(self.motor.Id,': moving ', direction)
-#                if (self.endswitch.__class__.__name__ == "MockSwitch"):
-#                    self.endswitch.increase_counter()
-#                    self.endswitch.print_counter()
 
             if self.endswitch.get_end_cw():
                 print('End reached', direction)
-                #print(self.motor.Id, ':stop')
                 self.motor.stop()
-#                if (self.endswitch.__class__.__name__ == "MockSwitch"):
-#                    self.endswitch.decrease_counter()
-#                    self.endswitch.print_counter()
 
         else:
             if not self.endswitch.get_end_ccw():
                 self.motor.move_ccw()
-                #print(self.motor.Id,': moving ', direction)
-#                if (self.endswitch.__class__.__name__ == "MockSwitch"):
-#                    self.endswitch.decrease_counter()
-#                    self.endswitch.print_counter()           
+        
             if self.endswitch.get_end_ccw():
                 print('End reached', direction)
-                #print(self.motor.Id, ':stop')
                 self.motor.stop()
 
 #usage example
@@ -155,8 +129,7 @@ class Axis:
 #Axis2 = Axis(Motor2,("up","down"),EndUpDown)
 #print(EndUpDown.__class__.__name__)
 #if (Axis2.endswitch.__class__.__name__ == "MockSwitch"):
-#    print("class name is MockSwitch")
-#
+#print("class name is MockSwitch")
 #Axis2.move("up")
 #Axis2.move("up")
 #Axis2.move("none")
