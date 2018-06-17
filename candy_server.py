@@ -59,23 +59,6 @@ def turnOffMotors():
 
 atexit.register(turnOffMotors)
 
-""" GPIO Setup """
-GPIO.setmode(GPIO.BCM)
-# Controller pins
-GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(24, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(5, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-# other pins
-GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(12, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(16, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-
 # Raspberry Pi pins as a dictionary
 RPi_pins = {"left":24,
             "right":25,
@@ -89,7 +72,24 @@ RPi_pins = {"left":24,
             "endBack":12,
             "gotCandy":27,
             "coinInserted":16
-        }
+            }
+
+""" GPIO Setup """
+GPIO.setmode(GPIO.BCM)
+# Controller pins
+GPIO.setup(RPi_pins["back"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RPi_pins["front"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RPi_pins["left"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RPi_pins["right"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RPi_pins["up"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RPi_pins["down"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+# other pins
+GPIO.setup(RPi_pins["endRight"], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(RPi_pins["endLeft"], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(RPi_pins["endBack"], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(RPi_pins["endFront"], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(RPi_pins["gotCandy"], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(RPi_pins["coinInserted"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 """ create objects of candy grabber """
 
