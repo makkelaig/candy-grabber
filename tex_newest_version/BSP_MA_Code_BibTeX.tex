@@ -44,7 +44,15 @@
 % Definition Code-Listings Formatierung:
 \usepackage[final]{listings}
 \lstset{captionpos=b, numberbychapter=false,caption=\lstname,frame=single, numbers=left, stepnumber=1, numbersep=2pt, xleftmargin=15pt, framexleftmargin=15pt, numberstyle=\tiny, tabsize=3, columns=fixed, basicstyle={\fontfamily{pcr}\selectfont\footnotesize}, keywordstyle=\bfseries, commentstyle={\color[gray]{0.33}\itshape}, stringstyle=\color[gray]{0.25}, breaklines, breakatwhitespace, breakautoindent}
-\lstloadlanguages{[ANSI]C, C++, [gnu]make, gnuplot, Matlab, Python}
+% JavaScript
+\lstdefinelanguage{JavaScript}{
+  morekeywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  morecomment=[s]{/*}{*/},
+  morecomment=[l]//,
+  morestring=[b]",
+  morestring=[b]'
+}
+\lstloadlanguages{[ANSI]C, C++, [gnu]make, gnuplot, Matlab, Python, JavaScript}
 
 %Formatieren des Quellcodeverzeichnisses
 \makeatletter
@@ -629,17 +637,48 @@ Das instantiierte Objekt \emph{CG} der Klasse \emph{Candy Grabber} besitzt insge
 %--------------------------------------------------------------UMSETZUNG
 %\chapter{Umsetzung}
 \section{Implementierung}
-Während der Implementierung wurde der Entwurf evaluiert und iterativ überarbeitet. Die Veränderungen wurden in den UML Diagrammen angepasst. 
-Umsetzung der Steuerungssoftware, Erstellen der UIs im Node-RED Dashboard, Modifizierung der vorhandenen Hardware sowie Montage und Verbindung der Hardwaremodule. Zusammenführen der einzelnen Komponenten, Systemintegration und Tests, Debugging und Dokumentation. Präsentation. Während der Implementierung der Software wurde der Entwurf evaluiert und iterativ überarbeitet.
-%\subsection{Programmierung}
-Sensoren wurden direkt über threaded callback methoden eingebunden. Zusammenfassung an einem Ort über dictionary. Eigene callbacks für Server und Python Objekt erstellt.
-Node-RED Flow Erstellung sowie Implementierung eigener Nodes in Java Script.
-Erstellung der Klassen, Hardware Abstraktion und Erstellung des Python Programms für manuelle Bedienung. Repräsentation des Python Objekts im OPC UA Adressraum. Programmierung des Ablaufs für Remote Bedienung über Server und Node-RED Flow.
+Bei der Implementierung des Systems wurde die Steuerungssoftware mithilfe der erstellten UML Diagramme umgesetzt, die Hardware entsprechend der Ergebnisse aus den Versuchsaufbauten modifiziert und die einzelnen Komponenten des Systems zusammengeführt. Abschließend wurden Funktionstests durchgeführt und die Dokumentation vervollständigt.
+\subsection{Hardware Modifizierung und Montage}
+Es wurden Modifizierungen an der vorhandenen Hardware durchgeführt, die in Abbildung \ref{fig:modifications} im Anhang dokumentiert sind. Die Stromzufuhr der Motoren der Achsen mit Grenztastern wurde direkt von den Controllern aus über die Grenztaster geführt und bei Erreichen einer Endposition unterbrochen. Um die Signale der Grenztaster auch für den Fall der Fernsteuerung nutzbar zu machen wurde diese Verbindung aufgetrennt. Danach wurden jeweils Zuleitungen für die beiden Motoren sowie für die beiden Taster verlötet und über das Gehäuse des Candy Grabbers verlegt. Da die Controller an der zuvor ausgebauten Platine verlötet waren wurden diese ausgebaut und auf einer neuen Lochrasterplatine angebracht, die anstelle der alten Platine in das Gehäuse eingebaut wurde. Die Schaltung der zwei Controller für die Achsen mit Grenztastern wurde an die Schaltung des Controllers der horizontalen Achse angepasst, da die zuvor vorhandene Verbindung mit den Grenztastern nicht mehr gegeben war. Das eingesetzte MotorHAT wurde über ein 40 Pin \ac{GPIO} Erweiterungskabel an die Pins des Raspberry Pi angeschlossen. Um Änderungen an den Verbindungen einfach umsetzen zu können wurde eine Prototyping Platine mit Klemmen versehen, die an die GPIO Pins des Raspberry Pi über die vorhandenen Lötkontakte des MotorHATs angelötet wurden. Es wurden zwei Klemmen für Ground, eine für 3,3V Spannungsversorgung sowie weitere Klemmen die benötigten \ac{GPIO} Pins des Raspberry Pi angebracht und beschriftet. Für den Einbau der zusätzlichen Hardware im Gehäuse des Candy Grabbers wurden Aussparungen für die Zuleitungen der Netzgeräte, der Kameraverbindung und des Netzwerkkabels mit einer Stichsäge aus dem Gehäuse geschnitten und das Batteriefach abgesägt. Hierdurch entstand ein Loch unter der Batteriefach-Klappe über das der Zugang zur SD Karte des eingebauten Raspberry Pi von aussen möglich ist. Zuletzt wurden die Kabel der Sensoren und Aktoren mit den zugehörigen BMK Nummern beschriftet und an die dafür vorgesehenen Klemmen angeschlossen. Zur Beschaltung der verwendeten \ac{GPIO} Eingänge mit \emph{Pull-Down} und \emph{Pull-Up} Widerständen wurden die internen Widerstände des Raspberry Pi eingesetzt. Diese müssen in der Konfiguration der Eingänge in der Software aktiviert werden.
+\subsection{Programmierung}
+Während der Implementierung der Software wurde der Entwurf evaluiert und iterativ überarbeitet. Die Veränderungen wurden in den UML Diagrammen angepasst. In den beiden Python Projekten \emph{axis.py} und \emph{stateMachine} sind die Klassen zur Erstellung der Steuerung definiert. Für die Implementierung des Zustandsautomaten wurden dem Objekt \emph{machine} bei der Initialisierung zwei Arrays mit definierten Übergängen (\emph{transitions}) und Zuständen (\emph{states}) als Parameter übergeben. Weiters wurden Methoden definiert, die bei bestimmten Übergängen vom Zustandsautomaten ausgeführt werden. Das Steuerungsprogramm wurde im Programm \emph{candy\_server.py} implementiert. Die verwendeten \emph{GPIO} Pins des Raspberry Pi wurden in einem Python \emph{dictionary} zusammengefasst. Als \emph{keys} für den Zugriff auf die Pin Nummern wurden eindeutige Bezeichner verwendet um den Code leserlich zu gestalten und Fehler in der Programmierung vorzubeugen. Des Weiteren kann man Änderungen an der Pinbelegung hierdurch einfach umsetzen indem man nur die Pin Nummern im \emph{dictionary} austauscht. Für die manuelle Steuerung wurden Rückruf-Funktionen (\emph{threaded callbacks}) zur Reaktion auf Zustandsänderungen an den \ac{GPIO} Pins des Raspberry Pi erstellt. Es wird das Objekt \emph{CG} der Klasse \emph{Candy Grabber} generisch während der Laufzeit des Programms erstellt sowie das Objekt \emph{CandyGrabber} auf dem \ac{OPC UA} Server bei Programmstart gebildet. Der \ac{OPC UA} Server abonniert von Clients beschreibbare Variablen seines eigenen Adressraums und ruft bei wahrgenommenen Veränderungen die Funktionen der jeweils zuständigen \emph{Handler} Klassen auf, die dem \emph{Subscription} Objekt bei der Initialisierung übergeben wird.
+%Programmierung des Ablaufs für Remote Bedienung über Server und Node-RED Flow.
+\subsection{Benutzerschnittstelle}
+In Node-RED wurden zwei \ac{OPC UA} Client Nodes zum Schreiben und Lesen von Variablen im Adressraum des \ac{OPC UA} Servers konfiguriert. Weiters wurden Nodes für jede Variable erstellt auf die zugegriffen wird. Für die Steuerung der Motoren über das Dashboard wurden sechs Richtungstaster erstellt, die die Motoren bewegen, solange eine der Tasten mit der Maus gehalten wird. Da hierfür keine Nodes im Dashboard zur Verfügung standen wurde ein eigener \emph{ControllerButton} Node aus dem Template Node erstellt, der die Zahl 1 oder 2 beim anklicken des Buttons sendet und eine Null beim loslassen. Dies wurde über die Angular-Methoden \emph{ng-mousedown} und \emph{ng-mouseup} bewerkstelligt.
+%
+\begin{lstlisting}[language=JavaScript,caption={Programmierung des \emph{ControllerButton} Node für Richtung \emph{Up}},label={sc:callback}]
+\\controller button node
+<script>
+    var value = 0;
+</script>
+<md-button
+    ng-mousedown="send({payload:1})"
+    ng-mouseup="send({payload:0})"
+    >
+Up \\button label
+</md-button>
+\end{lstlisting}
+Um aus den Signalen der Buttons Richtungen im String Format zu erzeugen wurde ein \emph{Function} Node \emph{get direction} mit JavaScript für jede Achse programmiert. Dieser extrahiert aus je zwei Buttons über ihren Rückgabewert eine Richtung und schreibt diese in die Variable \emph{Direction} auf dem \ac{OPC UA} Server wenn ein Button angeklickt oder losgelassen wird.
+\begin{lstlisting}[language=JavaScript,caption={Programmierung des \emph{get direction} Node für eine Achse},label={sc:callback}]
+\\get direction node
+if(msg.payload === 1){
+    msg.payload = "up";
+}
+else if(msg.payload === 2){
+    msg.payload = "down";
+}
+else{
+    msg.payload = "none";
+}
+return msg;
+\end{lstlisting}
+%
+Die erstellten Tasten der Steuerung wurden im Feld \emph{Controller} des Dashboards angeordnet. Weiters wurde ein Feld für die Übertragung des Kamera-Streams und zwei Buttons zum Starten und Stoppen eines Spiels im Dashboard erzeugt. Die Benutzeroberfläche ist im Anhang in Abbildung \ref{fig:dash} dargestellt. Um zu vermeiden, dass ein unbeendetes Spiel den Candy Grabber blockiert wurde ein Timer Node im Node-RED Flow erstellt, der gestartet wird wenn der Candy Grabber in den Zustand \emph{Playing} wechselt und das Spiel nach fünf Minuten über das Setzen der Variable \emph{timer} am \ac{OPC UA} Server beendet. Über die String Variable \emph{message} wird der/die BenutzerIn während des Spielverlaufs über wichtige Ereignisse informiert, die als Pop-Up Benachrichtigung am Dashboard aufscheint. Der erstellte Node-RED Flow ist im Anhang in Abbildung \ref{fig:nodered_flow} abgebildet.
+%
 \subsection{Systemintegration und Tests}
-Einbau aller Komponenten in den Candy Grabber. Beschriftung der Kabelverbindungen und Klemmen an der Hardware. Durchführung von Software-tests und Code-Hygiene (Debugging und Kommentare). Durchführung von Funktionstests.
-\subsection{Versionierung und Dokumentation}
-Hierfür wurde ein Github Repository erstellt über das alle wichtigen Informationen an einem Ort gesammelt wurden und das die Weiterentwicklung des Systems und Teamarbeit vereinfacht.
-Erstellung eines Git Repositories. Lesbarkeit des Codes und Einfügen von Kommentaren. Die unterschiedlichen Versionen der UML Diagramme wurden ebenso wie die Versionen der Software in einem GIT Repository abgelegt.
+Um die Funktionalität der programmierten Steuerung zu testen wurden Funktionstests an der Software ausgeführt und das erstellte Programm auf Fehler untersucht. Hierfür wurden Ersatzobjekte, sogenannte (\emph{Mockups}) anstelle der Motoren und \emph{print}-Funktionen eingesetzt. Nach erfolgten Softwaretests wurden Software und Hardware zusammengeführt und erneute Funktionstests durchgeführt.
+\subsection{Versionsverwaltung und Dokumentation}
+Zur Versionsverwaltung der erstellten Software wurde ein Git Repository auf \emph{Github} für das Projekt eingerichtet. In diesem sind alle bisher erstellten Versionen der Software gespeichert und können jederzeit wieder abgerufen werden, sollten sich schwerwiegende Funktionsprobleme über Fehler in der Programmierung ergeben. Zu Dokumentationszwecken wurden auch alle erstellten \ac{UML} Diagramme hier versioniert. Das Repository ist unter \verb+https://github.com/makkelaig/candy-grabber+ zugänglich. Zusätzlich wurden Kommentare in den Python Dateien verfasst, um die Lesbarkeit des Codes zu erhöhen.
 %
 \clearpage
 \chapter{Ergebnisse und Diskussion}
@@ -673,8 +712,9 @@ Vorgehensweise erwies sich als zielführend, Architektur Prototyping für IOT Sy
 Versionsverwaltung erleichterte Implementierung und Dokumentation, Teamarbeiten hierdurch möglich.
 Opc ua sehr versatil für den Einsatz im IoT, benötigt jedoch mehr Zeit für die Einarbeitung um alle Funktionalitäten ausschöpfen zu können. Hierzu könnte man ein eigenes Paper schreiben: Einsatz von Opc UA in IOT Pilotprojekten.
 Evaluierung: Einsatzfähigkeit für weitere Prototyping Projekte gegeben? Modularität ausreichend gegeben? Sensoren eventuell noch weiter abstrahierbar, Methoden im candy\_server.py könnten noch zusammengefasst werden. Oder sind die unabhängigen Methoden für manuell und remote sinnvoll?
-Evaluierung der Ergebnisse durch Vergleich mit den Anforderungen. Was wurde nicht implementiert und warum. Was sind die nächsten Schritte, wie könnte das System noch verbessert werden. Verbesserungsmöglichkeiten gibt es im Bereich Systemsicherheit, man kann hierzu die von Node-RED und \ac{OPC UA} angebotenen Sicherheitsmaßnahmen wie die Erstellung von Zertifizierungen, Benutzeridentifizierung und Passwortschutz oder Verschlüsselung der versendeten Daten einsetzen.
- {\color{purple}Für die Fortsetzung der Experimente und die Umsetzung der Implementierung war die frühere Version \emph{node-red-contrib-opcua} ausreichend, die Umstellung des Flows auf die neuere Version \emph{node-red-contrib-iiot-opcua} wird jedoch empfohlen, da der Support für die frühere Implementierung eingestellt wird.} Repräsentation über opc ua server besser umsetzbar über erstellung von beobachteten Objekten zum Beispiel. Eventuell möglich die Objekte im Adressraum direkt mit den Server Objekten zu verbinden. 
+Evaluierung der Ergebnisse durch Vergleich mit den Anforderungen. Was wurde nicht implementiert und warum. Was sind die nächsten Schritte, wie könnte das System noch verbessert werden. Verbesserungsmöglichkeiten gibt es im Bereich Systemsicherheit, man kann hierzu die von Node-RED und \ac{OPC UA} angebotenen Sicherheitsmaßnahmen wie die Erstellung von Zertifizierungen, Benutzeridentifizierung und Passwortschutz oder Verschlüsselung der versendeten Daten einsetzen. Git Repository: wichtigen Informationen an einem Ort gesammelt wurden und das die Weiterentwicklung des Systems und Teamarbeit vereinfacht.Nächste Schritte: Readme im Repository einfügen, Anleitung zum Starten des Systems.
+ {\color{purple}Für die Fortsetzung der Experimente und die Umsetzung der Implementierung war die frühere Version \emph{node-red-contrib-opcua} ausreichend, die Umstellung des Flows auf die neuere Version \emph{node-red-contrib-iiot-opcua} wird jedoch empfohlen, da der Support für die frühere Implementierung eingestellt wird.} Repräsentation über opc ua server besser umsetzbar über erstellung von beobachteten Objekten zum Beispiel. Eventuell möglich die Objekte im Adressraum direkt mit den Server Objekten zu verbinden.
+ \clearpage
 % Hier beginnen die Verzeichnisse.
 %
 
@@ -710,26 +750,26 @@ Evaluierung der Ergebnisse durch Vergleich mit den Anforderungen. Was wurde nich
 %\section{Meilensteine}
 %{\color{red}Zum Zwecke der Messbarkeit, hier noch eine zeitliche Einteilung als Richtlinie zur Umsetzung des Projekts:}
 %%Tabelle Meilensteine
-\begin{table}[!htbp]
-\caption{Diese Tabelle dient zur Überprüfung des Projektfortschritts und ist kein Bestandteil der schriftlichen Arbeit}
-\centering
-\begin{tabular}{| p{0.8\linewidth}| p{0.2\linewidth} |}\hline
-Meilensteine & Zeitplan\\\hline
-Aufsetzen des IoT Device (Raspberry Pi) &\cellcolor{green} Anfang März\\
-Formulieren der Ziele & \cellcolor{green} 08.März\\
-(zusätzliche) Hardware Auswahl und Abgabe Bestellliste &\cellcolor{green} 16.März\\
-Hardware steuerbar über Rechner & \cellcolor{yellow} 30.März\\
-Recherche zum Stand der Technik & \cellcolor{yellow} 14.April\\
-Auswahl und Installation der Toolchain & \cellcolor{green} 30.April\\
-Implementierung der IoT Anwendung & \cellcolor{green} 30.Mai\\
-Präsentation des Candy Grabbers, Erstellung eines Videos & 13.Juni\\
-Bewertung der Umsetzung und Fertigstellung der BA Arbeit & 16.Juni\\\hline
-\end{tabular}
-\end{table}
-\clearpage
-\ifthenelse{\equal{\FHTWCitationType}{HARVARD}}{}{\bibliographystyle{gerabbrv}}
-\bibliography{Literatur}
-\clearpage
+%\begin{table}[!htbp]
+%\caption{Diese Tabelle dient zur Überprüfung des Projektfortschritts und ist kein Bestandteil der schriftlichen Arbeit}
+%\centering
+%\begin{tabular}{| p{0.8\linewidth}| p{0.2\linewidth} |}\hline
+%Meilensteine & Zeitplan\\\hline
+%Aufsetzen des IoT Device (Raspberry Pi) &\cellcolor{green} Anfang März\\
+%Formulieren der Ziele & \cellcolor{green} 08.März\\
+%(zusätzliche) Hardware Auswahl und Abgabe Bestellliste &\cellcolor{green} 16.März\\
+%Hardware steuerbar über Rechner & \cellcolor{yellow} 30.März\\
+%Recherche zum Stand der Technik & \cellcolor{yellow} 14.April\\
+%Auswahl und Installation der Toolchain & \cellcolor{green} 30.April\\
+%Implementierung der IoT Anwendung & \cellcolor{green} 30.Mai\\
+%Präsentation des Candy Grabbers, Erstellung eines Videos & 13.Juni\\
+%Bewertung der Umsetzung und Fertigstellung der BA Arbeit & 16.Juni\\\hline
+%\end{tabular}
+%\end{table}
+%\clearpage
+%\ifthenelse{\equal{\FHTWCitationType}{HARVARD}}{}{\bibliographystyle{gerabbrv}}
+%\bibliography{Literatur}
+%\clearpage
 
 % Das Abbildungsverzeichnis
 \listoffigures
@@ -806,6 +846,17 @@ Bewertung der Umsetzung und Fertigstellung der BA Arbeit & 16.Juni\\\hline
 \caption{UML Aktivitätendiagramm des Candy Grabbers}\label{fig:uml_activity}
 \end{figure}
 %
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{./PICs/mods_2.png}
+\caption{Vorgenommene Modifikationen am Candy Grabber. Links: Vor dem Umbau, Mitte: Nach dem Umbau, Rechts: MotorHAT mit GPIO-Anschlussklemmen}\label{fig:modifications}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{./PICs/mod_motor.png}
+\caption{Modifikationen an der Achse Vor/Zurück}\label{fig:mod_motor}
+\end{figure}
+%
 \chapter{Node-RED Flow}
 \begin{figure}[H]
 \centering
@@ -813,50 +864,38 @@ Bewertung der Umsetzung und Fertigstellung der BA Arbeit & 16.Juni\\\hline
 \caption{Node-RED Flow des Candy Grabbers}\label{fig:nodered_flow}
 \end{figure}
 %
+\chapter{Node-RED Dashboard}
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.2\linewidth, angle=270]{./PICs/dashboard.png}
+\caption{Benutzerschnittstelle des Candy Grabbers}\label{fig:dash}
+\end{figure}
 %
-\chapter{Quellcode Klasse Axis}
- \lstinputlisting
-    [caption={Klasse Achse}
-       \label{lst:axis},
-       captionpos=t,language=Python]
- {/Users/Makki/Documents/candy-grabber/axis.py}
+%
+%\chapter{Quellcode Klasse Axis}
+% \lstinputlisting
+%    [caption={Klasse Achse}
+%       \label{lst:axis},
+%       captionpos=t,language=Python]
+% {/Users/Makki/Documents/candy-grabber/axis.py}
+%%%
+%\clearpage
+%\chapter{Quellcode Klasse Candy Grabber}
+% \lstinputlisting
+%    [caption={Candy Grabber Klasse und Zustandsautomat}
+%       \label{lst:stateMachine},
+%       captionpos=t,language=Python]
+% {/Users/Makki/Documents/candy-grabber/stateMachine.py}
 %%
-\clearpage
-\chapter{Quellcode Klasse Candy Grabber}
- \lstinputlisting
-    [caption={Candy Grabber Klasse und Zustandsautomat}
-       \label{lst:stateMachine},
-       captionpos=t,language=Python]
- {/Users/Makki/Documents/candy-grabber/stateMachine.py}
-%
-\clearpage
-\chapter{Quellcode Programmcode}
- \lstinputlisting
-    [caption={Programmcode des Candy Grabbers}
-       \label{lst:candy_server},
-       captionpos=t,language=Python]
- {/Users/Makki/Documents/candy-grabber/candy_server.py}
+%\clearpage
+%\chapter{Quellcode Programmcode}
+% \lstinputlisting
+%    [caption={Programmcode des Candy Grabbers}
+%       \label{lst:candy_server},
+%       captionpos=t,language=Python]
+% {/Users/Makki/Documents/candy-grabber/candy_server.py}
 \end{document}
 %
-\subsection{Modifizierung der Hardware und Montage}
-%\begin{figure}[H]%
-%        		\begin{minipage}[t]{\linewidth}%
-%          	%\begin{center}%
-%			\begin{minipage}{0.5\linewidth}
-%				\begin{center}%
-%           				\includegraphics[width=0.9\linewidth]{./PICs/verkabelung_motoren_vorher.png}%
-%				\end{center}%
-%			\end{minipage}
-%			\begin{minipage}{0.5\linewidth}
-%				\begin{center}
-%           				\includegraphics[width=0.9\linewidth]{./PICs/verkabelung_motoren_nachher.png}%
-%				\end{center}%
-%			\end{minipage}
-%			\caption{Verkabelung der Grenztaster und Motoren der x- und y-Achse vor und nach den vorgenommenen Modifizierungen}%
-%			\label{fig:HWmodified}%
-%          	%\end{center}%
-%        		\end{minipage}%PackMLsimple copy
-%\end{figure}%
 %
 %
 %\noindent Querverweise werden in \LaTeX{} automatisch erzeugt und verwaltet, damit sie leicht aktualisiert werden können. Hier wird zum Beispiel auf Abbildung \ref{Abb1} verwiesen.
