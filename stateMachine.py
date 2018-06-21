@@ -8,7 +8,7 @@ import random
 from axis import MockSwitch, RealSwitch, Motor, Axis
 from transitions import Machine
 """
-    State machine by Alexander Neumann and others, 
+    State machine by Tal Yarkoni, Alexander Neumann and others, 
     available at: https://github.com/pytransitions/transitions.git
 """
 
