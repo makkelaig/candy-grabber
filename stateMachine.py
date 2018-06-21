@@ -14,7 +14,7 @@ from transitions import Machine
 
 class CandyGrabber:
     """
-    abstract representation of a toy candy grabber, 
+    Abstract representation of a toy candy grabber, 
     """
     
     coin_inserted = False
@@ -35,16 +35,13 @@ class CandyGrabber:
         self.AxisDU = AxisDU
 
     def set_mode(self,mode_in):
-        
         if self.mode == 'none':
             ret = True
             self.mode = mode_in
             print('mode is:', self.mode)
-        
         else:
             print('Sorry, somebody is playing at the moment')
-            ret = False
-                
+            ret = False     
         return ret
     
     def get_mode(self):
@@ -70,7 +67,7 @@ class CandyGrabber:
             if won==True:
                 print('Congratulations! You Won! get your candy')
             else:
-                print('sorry, the time is up. You Lost!')
+                print('Sorry, the time is up. You Lost!')
             self.stop()
             self.reset()
 
