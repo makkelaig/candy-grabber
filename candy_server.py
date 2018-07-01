@@ -1,6 +1,6 @@
 """
     Program for controlling the candy grabber remotely or manually
-    opc ua server holds opc ua object "CandyGrabber" and object "CG" from type CandyGrabber
+    opc ua server holds opc ua object "CandyGrabber" and object "CG" from class CandyGrabber
     
 """
 
