@@ -9,6 +9,8 @@ To run the candy grabber in the UAS Technikum LAN connect it to a router that al
 Power up the raspberry pi and the motor HAT, ssh into it and start the python program "candy_server.py" in the repository folder "candy-grabber" on the Desktop.
 
 $ ssh pi@\< your Raspberry Pi IP address \><br/>
+ask your supervisor for the password
+
 $ cd Desktop/candy-grabber"<br/>
 $ python3 candy_server.py<br/>
 
